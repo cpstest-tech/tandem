@@ -6,6 +6,10 @@ use crate::ai_sequence_cards::{
 };
 use vv_core::Id;
 
+#[path = "ai_sequence_material_ui.rs"]
+mod material_ui;
+use material_ui::PickTarget;
+
 #[derive(Default)]
 pub(crate) struct State {
     prompt: String,
@@ -47,6 +51,11 @@ pub(crate) struct State {
     setup_error: Option<String>,
     /// Requests submitted while the runtime was still being installed.
     waiting: Vec<Request>,
+    no_material_requests: bool,
+    no_suggestion_material: bool,
+    /// Photos/videos given before generation, with what they show.
+    material: Vec<(PathBuf, String)>,
+    material_pick: Option<(PickTarget, std::sync::mpsc::Receiver<Option<PathBuf>>)>,
 }
 
 #[derive(Clone, Copy, Default, PartialEq)]
@@ -210,6 +219,10 @@ impl VenturiApp {
     pub(crate) fn poll_ai_sequences(&mut self, ctx: &egui::Context) {
         self.poll_ai_source_copy();
         self.poll_ai_runtime_setup(ctx);
+        self.poll_material_pick();
+        if self.ai_sequences.material_pick.is_some() {
+            ctx.request_repaint_after(std::time::Duration::from_millis(200));
+        }
         let project_path = self.session.path().map(Path::to_path_buf);
         let owner = (self.session.epoch(), project_path.clone());
         if self.ai_sequences.import_owner.as_ref() != Some(&owner) {
@@ -297,7 +310,12 @@ impl VenturiApp {
                 }
                 continue;
             }
-            self.toast(format!("AI sequence {} is ready", job.id));
+            let empty = crate::ai_sequence::material::empty_count(&job);
+            if empty > 0 && !job.request.render_only {
+                self.toast(t!("ai_sequence.material_waiting", count = empty));
+            } else {
+                self.toast(format!("AI sequence {} is ready", job.id));
+            }
             self.import_ai_sequence(&job);
         }
         if self.edit_drag_group.is_none() && !self.timeline_state.holds_undo_group() {
@@ -447,6 +465,7 @@ impl VenturiApp {
                 .desired_width(ui.available_width())
                 .hint_text(t!("ai_sequence.prompt_example")),
         );
+        self.show_material_choice(ui);
         if !revising {
             self.show_transcript_choice(ui);
             section_title(ui, "2", &t!("ai_sequence.section_style"));
@@ -622,6 +641,7 @@ impl VenturiApp {
                     if self.ai_sequences.error.is_none() {
                         self.ai_sequences.prompt.clear();
                         self.ai_sequences.parent = None;
+                        self.ai_sequences.material.clear();
                     }
                 }
                 Err(error) => self.ai_sequences.error = Some(error),
@@ -1001,6 +1021,9 @@ impl VenturiApp {
             request.insert = false;
             request.reuse_session = !self.ai_sequences.fresh_session;
             request.limits = self.settings.ai_limits.clone();
+            request.render_only = false;
+            request.material = self.material_request();
+            request.ask_material = !self.ai_sequences.no_material_requests;
             return Ok(request);
         }
         self.request_for(
@@ -1076,6 +1099,9 @@ impl VenturiApp {
             style: self.ai_style(),
             placement: self.ai_sequences.placement,
             media,
+            material: self.material_request(),
+            ask_material: !self.ai_sequences.no_material_requests,
+            render_only: false,
             provider: self.settings.ai_provider,
             api_access: self.settings.sequence_api_access(),
             model: self.settings.ai_model.clone(),
@@ -1360,6 +1386,7 @@ impl VenturiApp {
                 } else if last_failed {
                     ui.colored_label(theme::ERROR, t!("ai_sequence.edit_failed"));
                 }
+                self.show_slots(ui, &current, target, current_media, busy);
                 if !improvements.is_empty() {
                     ui.add_space(theme::SPACE_2);
                     ui.strong(t!("ai_sequence.or_try"));
@@ -1494,6 +1521,9 @@ impl VenturiApp {
         request.provider = self.settings.ai_provider;
         request.model = self.settings.ai_model.clone();
         request.insert = false;
+        request.render_only = false;
+        request.material.clear();
+        request.ask_material = !self.ai_sequences.no_material_requests;
         // The clip keeps its length: the new media must still cover the current trim.
         request.auto_duration = false;
         request.timeline = Some(target.timeline.raw());
@@ -1643,6 +1673,14 @@ impl VenturiApp {
                 &mut self.ai_sequences.refresh_analysis,
                 t!("ai_sequence.refresh_analysis"),
             );
+            let mut ask = !self.ai_sequences.no_suggestion_material;
+            if ui
+                .checkbox(&mut ask, t!("ai_sequence.material_suggest"))
+                .on_hover_text(t!("ai_sequence.material_ask_hint"))
+                .changed()
+            {
+                self.ai_sequences.no_suggestion_material = !ask;
+            }
         }
         if let Some(error) = &self.ai_sequences.error {
             ui.colored_label(theme::ERROR, error);
@@ -1690,6 +1728,8 @@ impl VenturiApp {
             let jump_allowed =
                 base.is_some_and(|base| base.timeline == self.timeline_id.map(Id::raw));
             let mut jump = None;
+            let mut pick = None;
+            let picking = self.ai_sequences.material_pick.is_some();
             for (index, suggestion) in self.ai_sequences.suggestions.iter_mut().enumerate() {
                 ui.push_id(index, |ui| {
                     // Not BG_RAISED: the unchecked checkbox would vanish into it.
@@ -1745,9 +1785,17 @@ impl VenturiApp {
                                         .color(theme::TEXT_SECONDARY),
                                 );
                             }
+                            if let Some(target) =
+                                Self::show_suggestion_material(ui, suggestion, index, picking)
+                            {
+                                pick = Some(target);
+                            }
                         });
                 });
                 ui.add_space(theme::SPACE_1);
+            }
+            if let Some(target) = pick {
+                self.pick_material(target);
             }
             if let Some(start_ms) = jump
                 && let Some(base) = &self.ai_sequences.analysis_base
@@ -1796,6 +1844,7 @@ impl VenturiApp {
             base.placement = self.ai_sequences.placement;
             base.composition.transparent =
                 self.ai_sequences.transparent || self.ai_sequences.placement.is_overlay();
+            base.ask_material = !self.ai_sequences.no_suggestion_material;
             let selected: Vec<_> = self
                 .ai_sequences
                 .suggestions
@@ -1833,6 +1882,8 @@ impl VenturiApp {
         };
         // Style is applied at generation time, so it must not split the analysis cache.
         request.style.clear();
+        request.material.clear();
+        request.ask_material = !self.ai_sequences.no_suggestion_material;
         request.provider = self.ai_sequences.analysis_provider;
         request.model = self.ai_sequences.analysis_model.clone();
         request.api_access = self.settings.sequence_api_access();

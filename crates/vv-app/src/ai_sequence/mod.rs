@@ -4,6 +4,7 @@ pub use access::ApiAccess;
 pub(crate) mod availability;
 pub(crate) mod context;
 pub(crate) mod insertion;
+pub(crate) mod material;
 pub(crate) mod portable;
 pub(crate) mod process;
 mod provider;
@@ -124,6 +125,15 @@ pub struct Request {
     pub placement: Placement,
     #[serde(default)]
     pub media: Vec<context::Source>,
+    /// Spaces for the user's photos/videos known before generation.
+    #[serde(default)]
+    pub material: Vec<material::Slot>,
+    /// The model may add spaces for material it should not invent.
+    #[serde(default)]
+    pub ask_material: bool,
+    /// Re-renders the parent with new material, without calling the model.
+    #[serde(default)]
+    pub render_only: bool,
     pub provider: Provider,
     #[serde(skip)]
     pub api_access: ApiAccess,
@@ -193,6 +203,8 @@ pub struct Job {
     /// Edits the model proposed for this exact composition.
     #[serde(default)]
     pub improvements: Vec<Improvement>,
+    #[serde(default)]
+    pub slots: Vec<material::Slot>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

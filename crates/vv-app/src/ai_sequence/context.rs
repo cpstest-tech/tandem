@@ -382,7 +382,7 @@ pub fn inline_parts(job: &Job, directory: &Path) -> Result<Vec<serde_json::Value
 pub fn image_paths(job: &Job, directory: &Path) -> Result<Vec<PathBuf>, String> {
     active_attachments(job)
         .filter(|attachment| attachment.mime == "image/png")
-        .take(3)
+        .take(6)
         .map(|attachment| attachment_path(directory, attachment))
         .collect()
 }

@@ -37,6 +37,11 @@ pub trait Adapter {
             }
         });
         let mut required = vec!["source", "transparent", "suggestions"];
+        let ask = job.request.ask_material;
+        if ask {
+            properties["material"] = super::material::schema();
+            required.push("material");
+        }
         if auto {
             properties["duration_seconds"] = serde_json::json!({"type":"NUMBER"});
             required.push("duration_seconds");
@@ -44,8 +49,13 @@ pub trait Adapter {
         let schema =
             serde_json::json!({"type":"OBJECT", "properties":properties, "required":required});
         let prompt = format!(
-            "{prompt}\nReturn the required JSON fields source and transparent. The current render transparency is {}. Preserve it unless the user asks for a transparent/opaque background or overlay. The transparent flag controls the actual rendered alpha channel, so update the component background consistently. Also return suggestions: exactly three different, concrete edits the user could ask for next to improve THIS composition, based on what you just wrote. Each has an id (short slug), a title of at most 4 words, a description of one short plain sentence a non-technical person understands (no jargon, no code terms), and an instruction: a precise edit request addressed to you, specific to elements that exist in the source. Write them in the language of the user request. Do not repeat edits listed in the earlier requests.{}",
+            "{prompt}\nReturn the required JSON fields source and transparent. The current render transparency is {}. Preserve it unless the user asks for a transparent/opaque background or overlay. The transparent flag controls the actual rendered alpha channel, so update the component background consistently. Also return suggestions: exactly three different, concrete edits the user could ask for next to improve THIS composition, based on what you just wrote. Each has an id (short slug), a title of at most 4 words, a description of one short plain sentence a non-technical person understands (no jargon, no code terms), and an instruction: a precise edit request addressed to you, specific to elements that exist in the source. Write them in the language of the user request. Do not repeat edits listed in the earlier requests.{}{}",
             job.request.composition.transparent,
+            if ask {
+                super::material::SCHEMA_HINT
+            } else {
+                ""
+            },
             if auto {
                 " Also return duration_seconds: the length in seconds that best fits the content, between 1 and the maximum in Configuration. Design the animation to fill exactly that length."
             } else {
@@ -59,6 +69,13 @@ pub trait Adapter {
             transparent,
             duration_seconds: parse_duration(&reply.text),
             improvements: parse_improvements(&reply.text),
+            requested: if ask {
+                serde_json::from_str(&reply.text)
+                    .map(|value| super::material::parse_requested(&value))
+                    .unwrap_or_default()
+            } else {
+                Vec::new()
+            },
             usage: reply.usage,
             session: reply.session,
             events: reply.events,
@@ -79,6 +96,7 @@ pub struct Output {
     pub transparent: Option<bool>,
     pub duration_seconds: Option<f64>,
     pub improvements: Vec<Improvement>,
+    pub requested: Vec<super::material::Slot>,
     pub usage: Option<serde_json::Value>,
     pub session: Option<String>,
     pub events: Vec<String>,

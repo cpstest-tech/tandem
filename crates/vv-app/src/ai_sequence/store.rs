@@ -75,6 +75,7 @@ impl Store {
             events: Vec::new(),
             attachments: Vec::new(),
             improvements: Vec::new(),
+            slots: Vec::new(),
         };
         if let Err(error) = self.save(&job) {
             let _ = std::fs::remove_dir(self.directory(&job.id)?);

@@ -431,3 +431,7 @@ export.blur_summary:
 export.blur_none:
   en: "No blur at these settings: interpolate to a higher frame rate or raise the amount."
   it: "Con queste impostazioni non c'è blur: interpola a un frame rate più alto o alza l'intensità."
+
+export.empty_material:
+  en: "%{count} AI infographics still have empty spaces for your photos or videos: they will be exported empty."
+  it: "%{count} infografiche AI hanno ancora spazi vuoti per le tue foto o i tuoi video: verranno esportati vuoti."

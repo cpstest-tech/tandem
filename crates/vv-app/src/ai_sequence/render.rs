@@ -10,7 +10,7 @@ const [browserExecutable, mode, runtime, work] = process.argv.slice(2);
 const {bundle} = require(path.join(runtime, 'node_modules/@remotion/bundler'));
 const {selectComposition, renderMedia} = require(path.join(runtime, 'node_modules/@remotion/renderer'));
 (async () => {
-  const serveUrl = await bundle({entryPoint:path.join(work, 'index.tsx'), publicDir: null});
+  const serveUrl = await bundle({entryPoint:path.join(work, 'index.tsx'), publicDir: path.join(work, 'public')});
   const composition = await selectComposition({serveUrl, id:'Sequence', browserExecutable, logLevel:'verbose'});
   if (mode === 'validate') return;
   const transparent = mode === 'transparent';
@@ -35,11 +35,9 @@ pub fn prepare(job: &Job, directory: &Path) -> Result<(), String> {
         job.source.as_deref().ok_or("Missing source")?,
     )
     .map_err(|e| e.to_string())?;
-    let entry = format!(
-        "import React from 'react'; import {{registerRoot, Composition}} from 'remotion'; import Scene from './Scene'; registerRoot(() => <Composition id=\"Sequence\" component={{Scene}} width={{{}}} height={{{}}} fps={{{}}} durationInFrames={{{}}}/>);",
-        config.width, config.height, config.fps, config.frames
-    );
-    std::fs::write(directory.join("index.tsx"), entry).map_err(|e| e.to_string())?;
+    std::fs::write(directory.join("index.tsx"), super::material::entry(job)?)
+        .map_err(|e| e.to_string())?;
+    std::fs::create_dir_all(directory.join("public")).map_err(|e| e.to_string())?;
     std::fs::write(directory.join("driver.cjs"), DRIVER).map_err(|e| e.to_string())?;
     std::fs::create_dir_all(directory.join("node_modules")).map_err(|e| e.to_string())
 }
@@ -82,6 +80,14 @@ pub fn run(
     };
     let work = directory.canonicalize().map_err(|e| e.to_string())?;
     let mut command = if cfg!(target_os = "linux") {
+        // Video frames come from a local server Node reaches by name: without
+        // these the lookup goes to DNS, which the isolated network lacks.
+        std::fs::write(
+            work.join("sandbox-hosts"),
+            "127.0.0.1 localhost\n::1 localhost\n",
+        )
+        .and_then(|_| std::fs::write(work.join("sandbox-nsswitch.conf"), "hosts: files\n"))
+        .map_err(|e| e.to_string())?;
         sandboxed(&root, &node, &work, relative_browser, mode)
     } else {
         check_imports(job.source.as_deref().unwrap_or_default())?;
@@ -144,6 +150,12 @@ fn sandboxed(
         .arg("--ro-bind")
         .arg(root.join("node_modules"))
         .arg("/work/node_modules")
+        .arg("--ro-bind")
+        .arg(work.join("sandbox-hosts"))
+        .arg("/etc/hosts")
+        .arg("--ro-bind")
+        .arg(work.join("sandbox-nsswitch.conf"))
+        .arg("/etc/nsswitch.conf")
         .args([
             "--chdir",
             "/work",

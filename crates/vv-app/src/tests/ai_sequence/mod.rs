@@ -1,12 +1,15 @@
 use super::*;
 
-fn request() -> Request {
+pub(super) fn request() -> Request {
     Request {
         prompt: "Animated bars".into(),
         context: String::new(),
         style: String::new(),
         placement: Placement::Fullscreen,
         media: Vec::new(),
+        material: Vec::new(),
+        ask_material: false,
+        render_only: false,
         provider: Provider::Gemini,
         api_access: Default::default(),
         model: "gemini-4-hydrogen".into(),
@@ -30,7 +33,7 @@ fn request() -> Request {
     }
 }
 
-fn directory() -> PathBuf {
+pub(super) fn directory() -> PathBuf {
     let path = std::env::temp_dir().join(format!(
         "sequence-tests-{}-{}",
         std::process::id(),
@@ -283,6 +286,7 @@ fn accepted_suggestion_rebases_captions_and_keeps_a_stable_timeline_anchor() {
         end_ms: 4000,
         description: "Show a CPU diagram".into(),
         reason: "Explain stages".into(),
+        material: Vec::new(),
         selected: true,
     };
     let generated =
@@ -404,7 +408,7 @@ fn insertion_follows_a_moved_reference_and_rejects_trimmed_or_replaced_sources()
     assert!(insertion::position(&timeline, &req).is_err());
 }
 
-fn local_runtime() -> Runtime {
+pub(super) fn local_runtime() -> Runtime {
     let runtime_directory = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../tools/remotion-runtime")
         .canonicalize()
@@ -686,6 +690,7 @@ fn saved_visual_analysis_is_reused_without_starting_a_provider_request() {
             end_ms: 1200,
             description: "CPU pipeline diagram".into(),
             reason: "Clarifies stages".into(),
+            material: Vec::new(),
             selected: true,
         }],
         usage: Some(serde_json::json!({"totalTokenCount":100})),

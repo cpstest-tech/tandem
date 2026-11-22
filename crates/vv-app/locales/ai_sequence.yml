@@ -711,3 +711,67 @@ ai_sequence.generate_count:
 ai_sequence.use_idea:
   en: "Use this idea"
   it: "Usa questa idea"
+
+ai_sequence.material_filter:
+  en: "Photos and videos"
+  it: "Foto e video"
+
+ai_sequence.material_ask:
+  en: "Let the AI ask for your photos or videos"
+  it: "Permetti all'AI di chiedere il tuo materiale"
+
+ai_sequence.material_ask_hint:
+  en: "Only when it is really needed, like a real screenshot in a tutorial: the AI leaves a space and you put your file in it. Logos and icons it draws itself, in the infographic style."
+  it: "Solo quando serve davvero, come uno screenshot vero in un tutorial: l'AI lascia uno spazio e ci metti il tuo file. Loghi e icone li disegna lei, nello stile dell'infografica."
+
+ai_sequence.material_suggest:
+  en: "Suggestions can ask for your photos or videos"
+  it: "I suggerimenti possono chiedere il tuo materiale"
+
+ai_sequence.material_add:
+  en: "Add photo or video…"
+  it: "Aggiungi foto o video…"
+
+ai_sequence.material_add_hint:
+  en: "Your file goes into the infographic as it is: the AI frames it, animates it and can point at its details."
+  it: "Il tuo file entra nell'infografica così com'è: l'AI lo inquadra, lo anima e può indicarne i dettagli."
+
+ai_sequence.material_note:
+  en: "What it shows (optional)"
+  it: "Cosa mostra (facoltativo)"
+
+ai_sequence.material_remove:
+  en: "Remove"
+  it: "Rimuovi"
+
+ai_sequence.material_replace:
+  en: "Replace…"
+  it: "Sostituisci…"
+
+ai_sequence.material_choose:
+  en: "Choose…"
+  it: "Scegli…"
+
+ai_sequence.material_later:
+  en: "Or leave it empty and add it later from the clip properties"
+  it: "Oppure lascialo vuoto e aggiungilo dopo dalle proprietà della clip"
+
+ai_sequence.material_title:
+  en: "Your material"
+  it: "Il tuo materiale"
+
+ai_sequence.material_subtitle:
+  en: "Spaces for your photos and videos. Changing them only re-renders: the AI is not called again."
+  it: "Spazi per le tue foto e i tuoi video. Cambiarli rifà solo il render: l'AI non viene richiamata."
+
+ai_sequence.material_empty:
+  en: "Empty"
+  it: "Vuoto"
+
+ai_sequence.material_needed:
+  en: "Needs your material:"
+  it: "Serve il tuo materiale:"
+
+ai_sequence.material_waiting:
+  en: "Infographic ready: %{count} spaces wait for your photos or videos. Select the clip to fill them."
+  it: "Infografica pronta: %{count} spazi aspettano le tue foto o i tuoi video. Seleziona la clip per riempirli."

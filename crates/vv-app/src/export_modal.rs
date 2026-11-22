@@ -72,6 +72,7 @@ struct Env<'a> {
     waits_for_scan: bool,
     /// Background removal still analysing a clip: how far, 0..1.
     cutout_pending: Option<f32>,
+    empty_material: usize,
     running: Option<&'a Arc<Mutex<ExportProgress>>>,
 }
 
@@ -427,6 +428,12 @@ impl ExportModal {
         });
         if self.output_path().exists() {
             ui.colored_label(theme::WARNING, t!("export.overwrite_warning"));
+        }
+        if env.empty_material > 0 {
+            ui.colored_label(
+                theme::WARNING,
+                t!("export.empty_material", count = env.empty_material),
+            );
         }
         ui.add_space(theme::SPACE_1);
         ui.separator();
@@ -1206,6 +1213,7 @@ impl VenturiApp {
                 range,
                 waits_for_scan: self.session.export_waits_for_scan(timeline, true),
                 cutout_pending: self.cutout_pending(timeline),
+                empty_material: self.ai_empty_material(timeline),
                 running: self.export.as_ref().map(|state| &state.progress),
             };
             modal.show(ctx, &env)
