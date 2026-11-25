@@ -24,6 +24,10 @@ history.lock_track:
   en: "Lock track"
   it: "Blocca track"
 
+history.reverse_clips:
+  en: "Reverse clips"
+  it: "Riproduci al contrario"
+
 history.toggle_clips_disabled:
   en: "Enable/disable clips"
   it: "Disattiva/attiva clip"

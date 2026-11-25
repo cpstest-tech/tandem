@@ -33,6 +33,7 @@ struct OwnedStretch {
     input: OwnedInput,
     frames: Range<u64>,
     tempo: f64,
+    reverse: bool,
     format: (u32, u16),
 }
 
@@ -58,6 +59,7 @@ impl OwnedStretch {
             },
             frames: self.frames.clone(),
             tempo: self.tempo,
+            reverse: self.reverse,
             sample_rate: self.format.0,
             channels: self.format.1,
             key: self.key,
@@ -1205,6 +1207,7 @@ impl AudioSource for MixBufferCache {
             },
             frames: request.frames,
             tempo: request.tempo,
+            reverse: request.reverse,
             format: (request.sample_rate, request.channels),
         });
         self.stretched

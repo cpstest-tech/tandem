@@ -806,6 +806,7 @@ fn clip_audio_failures<'a>(
         let reads_stream = |clip: &&vv_core::Clip| {
             !clip.disabled
                 && clip.freeze.is_none()
+                && !clip.reversed
                 && !(clip.pitch_correction && !clip.speed().is_one())
         };
         for clip in audio_tracks.flat_map(|t| &t.clips).filter(reads_stream) {

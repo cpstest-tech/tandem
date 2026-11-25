@@ -712,6 +712,9 @@ fn strip_track(segments: Vec<(usize, WantedRange)>) -> Vec<WantedRange> {
     segments.into_iter().map(|(_, s)| s).collect()
 }
 
+/// Timeline frames per wanted range of a reversed clip.
+const REVERSED_CHUNK_FRAMES: FrameIdx = 24;
+
 /// The part common to the two functions above: every Media clip of every video
 /// track clipped to `[from_frame, end_frame)`, with the index of its
 /// track so they can be sorted afterwards. Not sorted. Recursive: a clip
@@ -744,19 +747,35 @@ fn clipped_media_segments(
             .map(|(_, range)| range.clone())
             .collect();
         for (segment_start, segment_end) in uncovered(clip_start..clip_end, hidden) {
-            // clip→source-frame mapping shared with the export
-            // (`vv_core::Clip::picture_frame_at`, see the docs there for the
-            // reason — plans/REFACTOR_PIPELINE.md B1).
-            let source_start = clip.picture_frame_at(segment_start);
-            let source_end = clip.picture_frame_at(segment_end - 1);
-            let segment = WantedRange {
-                media_id: *media_id,
-                source_start,
-                source_end,
-                timeline_start: segment_start,
-                rate: clip.rate(),
+            // A reversed clip plays its source backwards: short chunks keep
+            // each wanted range a forward window near the playhead.
+            let step = if clip.reversed {
+                REVERSED_CHUNK_FRAMES
+            } else {
+                segment_end - segment_start
             };
-            push_or_recurse(project, track_index, segment, depth, &mut real);
+            let mut chunk_start = segment_start;
+            while chunk_start < segment_end {
+                let chunk_end = (chunk_start + step).min(segment_end);
+                // clip→source-frame mapping shared with the export
+                // (`vv_core::Clip::picture_frame_at`, see the docs there for the
+                // reason — plans/REFACTOR_PIPELINE.md B1).
+                let a = clip.picture_frame_at(chunk_start);
+                let b = clip.picture_frame_at(chunk_end - 1);
+                let segment = WantedRange {
+                    media_id: *media_id,
+                    source_start: a.min(b),
+                    source_end: a.max(b),
+                    timeline_start: if clip.reversed {
+                        chunk_end - 1
+                    } else {
+                        chunk_start
+                    },
+                    rate: clip.rate(),
+                };
+                push_or_recurse(project, track_index, segment, depth, &mut real);
+                chunk_start = chunk_end;
+            }
         }
     }
     real

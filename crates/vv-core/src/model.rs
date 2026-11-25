@@ -2112,6 +2112,10 @@ pub struct Clip {
     /// silent. Keyframes keep the mapping of `rate`, so they still animate.
     #[serde(default)]
     pub freeze: Option<FrameIdx>,
+    /// Plays the trimmed source range backwards, picture and sound.
+    /// Keyframes keep running forward in timeline time.
+    #[serde(default)]
+    pub reversed: bool,
     /// Excluded from compositing and mixing, but stays on the timeline.
     #[serde(default)]
     pub disabled: bool,
@@ -2166,6 +2170,7 @@ impl Clip {
             speed: Rational::one(),
             pitch_correction: pitch_correction_default(),
             freeze: None,
+            reversed: false,
             disabled: false,
             fade_in: 0,
             fade_out: 0,
@@ -2346,8 +2351,15 @@ impl Clip {
     /// Source frame whose picture is shown at `timeline_frame`: the one of
     /// `source_frame_at`, or the frozen one.
     pub fn picture_frame_at(&self, timeline_frame: FrameIdx) -> FrameIdx {
-        self.freeze
-            .unwrap_or_else(|| self.source_frame_at(timeline_frame))
+        if let Some(frozen) = self.freeze {
+            return frozen;
+        }
+        let forward = self.source_frame_at(timeline_frame);
+        if self.reversed {
+            self.source_in() + self.source_out() - 1 - forward
+        } else {
+            forward
+        }
     }
 
     /// Clears the freeze and shortens the clip back within a media of

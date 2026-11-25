@@ -269,31 +269,48 @@ pub fn stretch_offline(
     request: &StretchRequest,
     levels: &mut LevelCache,
 ) -> Result<SampleBlocks, ExportError> {
-    let mut stretcher = Stretcher::new(PROJECT_SAMPLE_RATE, PROJECT_CHANNELS, request.tempo)
-        .map_err(ExportError::Failed)?;
     let mut out = Vec::new();
-    let mut failed = None;
-    render(
-        request.project,
-        Mix::Stretch(request),
-        request.frames.clone(),
-        levels,
-        |chunk| match stretcher.push(chunk, &mut out) {
-            Ok(()) => ControlFlow::Continue(()),
-            Err(e) => {
-                failed = Some(e);
-                ControlFlow::Break(())
-            }
-        },
-    )?;
-    if let Some(e) = failed {
-        return Err(ExportError::Failed(e));
+    // Only reversed: the samples as they are, no stretcher needed.
+    if request.tempo == 1.0 {
+        render(
+            request.project,
+            Mix::Stretch(request),
+            request.frames.clone(),
+            levels,
+            |chunk| {
+                out.extend_from_slice(chunk);
+                ControlFlow::Continue(())
+            },
+        )?;
+    } else {
+        let mut stretcher = Stretcher::new(PROJECT_SAMPLE_RATE, PROJECT_CHANNELS, request.tempo)
+            .map_err(ExportError::Failed)?;
+        let mut failed = None;
+        render(
+            request.project,
+            Mix::Stretch(request),
+            request.frames.clone(),
+            levels,
+            |chunk| match stretcher.push(chunk, &mut out) {
+                Ok(()) => ControlFlow::Continue(()),
+                Err(e) => {
+                    failed = Some(e);
+                    ControlFlow::Break(())
+                }
+            },
+        )?;
+        if let Some(e) = failed {
+            return Err(ExportError::Failed(e));
+        }
+        stretcher.finish(&mut out).map_err(ExportError::Failed)?;
     }
-    stretcher.finish(&mut out).map_err(ExportError::Failed)?;
     if request.channels != PROJECT_CHANNELS {
         let mut remixed = Vec::new();
         remix_channels_into(&out, PROJECT_CHANNELS, request.channels, &mut remixed);
         out = remixed;
+    }
+    if request.reverse {
+        vv_audio::reverse_frames(&mut out, request.channels);
     }
     Ok(SampleBlocks::contiguous(Arc::new(out), 0, request.channels))
 }

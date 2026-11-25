@@ -69,6 +69,7 @@ impl VenturiApp {
             TimelineCommand::Duplicate => self.duplicate_selected(),
             TimelineCommand::ToggleDisabled => self.toggle_disabled_selected(),
             TimelineCommand::FreezeFrame => self.freeze_frame_at_playhead(),
+            TimelineCommand::Reverse => self.reverse_selected(),
             TimelineCommand::Mirror => self.mirror_selected(),
             TimelineCommand::ExtractAudio => self.extract_selected_audio(),
             TimelineCommand::Group => self.group_selected(),
@@ -170,6 +171,34 @@ impl VenturiApp {
         if let Some(still) = still {
             self.timeline_state.set_single_selection(Some(still));
         }
+    }
+
+    /// Plays the selected media clips backwards; if all already do, forwards.
+    pub(crate) fn reverse_selected(&mut self) {
+        let Some(timeline_id) = self.timeline_id else {
+            return;
+        };
+        let tl = &self.session.project.timelines[timeline_id];
+        let targets: Vec<(usize, ClipId, bool)> = self
+            .timeline_state
+            .selected
+            .iter()
+            .filter(|&&(t, _)| !tl.is_locked(t))
+            .filter_map(|&(t, id)| tl.clip(t, id).map(|c| (t, id, c)))
+            .filter(|(_, _, c)| {
+                matches!(c.source, vv_core::ClipSource::Media(_)) && c.freeze.is_none()
+            })
+            .map(|(t, id, c)| (t, id, c.reversed))
+            .collect();
+        if targets.is_empty() {
+            return;
+        }
+        let reversed = !targets.iter().all(|&(_, _, r)| r);
+        let clips = targets.into_iter().map(|(t, id, _)| (t, id)).collect();
+        self.session.history.do_command(
+            &mut self.session.project,
+            Box::new(vv_core::SetClipsReversed::new(timeline_id, clips, reversed)),
+        );
     }
 
     /// Flips the picture horizontally; if every selected clip already is, it

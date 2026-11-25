@@ -2054,3 +2054,117 @@ fn a_higher_output_rate_retimes_a_copy_of_the_timeline() {
     settings.fps = None;
     assert!(retimed_to_output(&project, id, &settings, 5..40).is_none());
 }
+
+#[test]
+fn a_reversed_clip_exports_its_source_frames_backwards() {
+    let dir = TempDir::new("vv-app-export-test");
+    let path = dir.join("reverse_source.mkv");
+    // Luma grows with the frame number, so each frame says which one it is.
+    vv_media::test_support::ffmpeg(
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "nullsrc=s=16x16:r=25:d=4,geq=lum='16+N*2':cb=128:cr=128",
+            "-g",
+            "12",
+        ],
+        &path,
+    );
+    let mut project = Project::default();
+    let media = project.media_pool.insert(vv_core::MediaItem {
+        path: path.clone(),
+        meta: vv_media::probe::probe(&path).unwrap(),
+        content_hash: 1,
+        compound: None,
+        folder: None,
+    });
+    let mut clip = Clip::from_source_range(
+        ClipId(1),
+        ClipSource::Media(media),
+        10,
+        80,
+        0,
+        vv_core::Rational::one(),
+    );
+    clip.reversed = true;
+    let mut provider = StreamingFrameProvider::default();
+    let luma = |provider: &mut StreamingFrameProvider, at| {
+        let frame = provider.frame_for(&project, &clip, at).unwrap().unwrap();
+        frame.y[frame.y.len() / 2] as i64
+    };
+    let expected = |source: i64| 16 + source * 2;
+    for at in 0..70 {
+        let source = 79 - at;
+        assert!(
+            (luma(&mut provider, at) - expected(source)).abs() <= 2,
+            "timeline frame {at} shows source frame {source}"
+        );
+    }
+}
+
+#[test]
+fn mix_audio_track_plays_a_reversed_clip_backwards() {
+    let dir = TempDir::new("vv-app-export-test");
+    let path = dir.join("reverse_source.wav");
+    // One loud second, then one silent second.
+    vv_media::test_support::ffmpeg(
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=440:sample_rate=48000:duration=1,apad=whole_dur=2",
+        ],
+        &path,
+    );
+    let mut project = Project::default();
+    let media = project.media_pool.insert(vv_core::MediaItem {
+        path,
+        meta: vv_core::MediaMeta {
+            duration_frames: 50,
+            fps: vv_core::Rational::new(25, 1),
+            width: 0,
+            height: 0,
+            has_video: false,
+            has_audio: true,
+            sample_rate: 48_000,
+            channels: 1,
+            audio_streams: 1,
+            file: Default::default(),
+        },
+        content_hash: 1,
+        compound: None,
+        folder: None,
+    });
+    let mut clip = Clip::from_source_range(
+        ClipId(1),
+        ClipSource::Media(media),
+        0,
+        50,
+        0,
+        vv_core::Rational::one(),
+    );
+    clip.reversed = true;
+    let tl = timeline_with(vec![Track {
+        kind: TrackKind::Audio,
+        clips: vec![clip],
+        muted: false,
+        solo: false,
+        locked: false,
+        crossings: Vec::new(),
+        mix: Default::default(),
+        armed: Default::default(),
+        main: false,
+        subtitles: false,
+        effects: false,
+        dub: None,
+    }]);
+    let mixed = mix_audio_track(&project, &tl, 0..50).unwrap();
+    let rms = |samples: &[f32]| {
+        (samples.iter().map(|s| s * s).sum::<f32>() / samples.len().max(1) as f32).sqrt()
+    };
+    let half = mixed.len() / 2;
+    let margin = mixed.len() / 10;
+    assert!(rms(&mixed[..half - margin]) < 0.01, "silence first");
+    assert!(rms(&mixed[half + margin..]) > 0.05, "the tone at the end");
+}

@@ -34,6 +34,8 @@ pub struct StretchRequest<'a> {
     /// Of the input: the clip's, from its first frame.
     pub frames: Range<u64>,
     pub tempo: f64,
+    /// The stretched result plays backwards (a reversed clip).
+    pub reverse: bool,
     pub sample_rate: u32,
     pub channels: u16,
     /// Same key, same stretch, in every build.
@@ -91,14 +93,22 @@ impl StretchRequest<'_> {
                 SampleBlocks::contiguous(Arc::new(mixed), self.frames.start, self.channels)
             }
         };
-        stretch_range(
-            &input,
-            self.frames.clone(),
-            self.tempo,
-            self.sample_rate,
-            self.channels,
-        )
-        .map_or(ClipAudio::Missing, |stretched| {
+        let stretched = if self.tempo == 1.0 {
+            let range = self.frames.start.max(input.start())..self.frames.end.min(input.end());
+            Ok(input.to_vec(range))
+        } else {
+            stretch_range(
+                &input,
+                self.frames.clone(),
+                self.tempo,
+                self.sample_rate,
+                self.channels,
+            )
+        };
+        stretched.map_or(ClipAudio::Missing, |mut stretched| {
+            if self.reverse {
+                crate::reverse_frames(&mut stretched, self.channels);
+            }
             ClipAudio::Ready(SampleBlocks::contiguous(
                 Arc::new(stretched),
                 0,

@@ -333,3 +333,26 @@ fn a_speed_on_a_frozen_clip_unfreezes_it_within_the_media() {
         "source 150..200 at half speed"
     );
 }
+
+#[test]
+fn a_reversed_clip_shows_its_range_backwards_and_undoes() {
+    let (mut project, tl, media) = setup(&[TrackKind::Video]);
+    let a = add(&mut project, tl, 0, media, (100, 150), 10);
+    let mut history = History::default();
+    history.do_command(
+        &mut project,
+        Box::new(SetClipsReversed::new(tl, vec![(0, a)], true)),
+    );
+    let clip = project.timelines[tl].clip(0, a).unwrap();
+    assert_eq!(clip.picture_frame_at(10), 149);
+    assert_eq!(clip.picture_frame_at(59), 100);
+    assert_eq!(
+        clip.source_frame_at(10),
+        100,
+        "keyframes keep running forward"
+    );
+    history.undo(&mut project);
+    let clip = project.timelines[tl].clip(0, a).unwrap();
+    assert!(!clip.reversed);
+    assert_eq!(clip.picture_frame_at(10), 100);
+}

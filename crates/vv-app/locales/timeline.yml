@@ -298,7 +298,7 @@ timeline.freeze_frame_action:
 
 timeline.reverse:
   en: "Reverse"
-  it: "Reverse"
+  it: "Al contrario"
 
 timeline.mirror:
   en: "Mirror"

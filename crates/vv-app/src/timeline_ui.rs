@@ -104,6 +104,7 @@ pub enum TimelineCommand {
     Duplicate,
     ToggleDisabled,
     FreezeFrame,
+    Reverse,
     Mirror,
     ExtractAudio,
     Group,
@@ -4161,8 +4162,14 @@ pub fn show_timeline(
                             TimelineCommand::FreezeFrame,
                             is_media_video,
                         );
-                        ui.add_enabled(false, egui::Button::new(t!("timeline.reverse")))
-                            .on_disabled_hover_text(t!("common.coming_soon"));
+                        menu_command(
+                            ui,
+                            state,
+                            &t!("timeline.reverse"),
+                            TimelineCommand::Reverse,
+                            matches!(visual.clip.source, ClipSource::Media(_))
+                                && visual.clip.freeze.is_none(),
+                        );
                         menu_command(
                             ui,
                             state,
@@ -7124,6 +7131,9 @@ fn clip_label_and_color(
                 label = format!("{label} ({})", t!("timeline.freeze_frame"));
             } else if !clip.speed().is_one() {
                 label = format!("{label} ({})", format_speed(clip.speed()));
+            }
+            if clip.reversed {
+                label = format!("{label} ({})", t!("timeline.reverse"));
             }
             let color = if track.kind == TrackKind::Video {
                 VIDEO_CLIP_COLOR

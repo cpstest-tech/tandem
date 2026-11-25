@@ -84,6 +84,7 @@ pub enum CommandLabel {
     ApplyPreset,
     ClipSpeed,
     FreezeFrame,
+    ReverseClips,
     RemoveSilences,
     AutoCut,
     TextCut,
@@ -773,6 +774,52 @@ impl Command for SetClipsDisabled {
         for &(track_index, clip_id, old) in &self.old {
             if let Some(clip) = tl.clip_mut(track_index, clip_id) {
                 clip.disabled = old;
+            }
+        }
+    }
+}
+
+/// Plays a set of clips backwards, or forwards again.
+#[derive(Debug)]
+pub struct SetClipsReversed {
+    pub timeline: TimelineId,
+    pub clips: Vec<(usize, ClipId)>,
+    pub reversed: bool,
+    old: Vec<(usize, ClipId, bool)>,
+}
+
+impl SetClipsReversed {
+    pub fn new(timeline: TimelineId, clips: Vec<(usize, ClipId)>, reversed: bool) -> Self {
+        Self {
+            timeline,
+            clips,
+            reversed,
+            old: Vec::new(),
+        }
+    }
+}
+
+impl Command for SetClipsReversed {
+    fn label(&self) -> CommandLabel {
+        CommandLabel::ReverseClips
+    }
+
+    fn apply(&mut self, project: &mut Project) {
+        let tl = &mut project.timelines[self.timeline];
+        self.old.clear();
+        for &(track_index, clip_id) in &self.clips {
+            if let Some(clip) = tl.clip_mut(track_index, clip_id) {
+                self.old.push((track_index, clip_id, clip.reversed));
+                clip.reversed = self.reversed;
+            }
+        }
+    }
+
+    fn undo(&self, project: &mut Project) {
+        let tl = &mut project.timelines[self.timeline];
+        for &(track_index, clip_id, old) in &self.old {
+            if let Some(clip) = tl.clip_mut(track_index, clip_id) {
+                clip.reversed = old;
             }
         }
     }

@@ -630,6 +630,7 @@ impl Importer<'_> {
         clip.audio_stream_index = audio_stream_index;
         clip.pitch_correction = venturi["pitch_correction"].as_bool().unwrap_or(true);
         clip.disabled = disabled;
+        clip.reversed = venturi["reversed"].as_bool().unwrap_or(false);
         if let ClipSource::Media(_) = clip.source {
             let saved = &venturi["freeze"];
             match saved["frame"].as_i64() {

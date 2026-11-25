@@ -169,13 +169,17 @@ fn input_clips_at(
                 Some(nested) => timeline_key(project, nested, sample_rate, depth + 1, available),
                 None => stable_hash((item.content_hash, clip.audio_stream_index)),
             };
-            let body = stable_hash((
+            let mut body = stable_hash((
                 (span.len, span.source_offset, span.step.to_bits()),
                 (span.fade_in, span.fade_out, clip.pitch_correction),
                 format!("{:?}", clip.effects.gain_db),
                 item.meta.fps.as_f64().to_bits(),
                 source,
             ));
+            // Only when set: the keys of every other clip stay the ones on disk.
+            if clip.reversed {
+                body = stable_hash((body, "reversed"));
+            }
             clips.push(InputClip {
                 track: track_index,
                 id: clip.id,

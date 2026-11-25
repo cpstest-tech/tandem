@@ -290,7 +290,13 @@ struct ActiveClipDecoder {
     /// A conformed clip asks for the same source frame on consecutive
     /// timeline frames, and the decoder does not go back.
     last: Option<(FrameIdx, Arc<vv_media::FrameYuv420>)>,
+    last_target: Option<FrameIdx>,
+    /// Frames decoded ahead of a backward request (reversed clips).
+    backward: std::collections::BTreeMap<FrameIdx, Arc<vv_media::FrameYuv420>>,
 }
+
+/// Source frames decoded per backward step: each step costs one seek.
+const BACKWARD_BLOCK: FrameIdx = 32;
 
 impl ActiveClipDecoder {
     fn open_for(
@@ -311,6 +317,8 @@ impl ActiveClipDecoder {
         let mut me = Self {
             decoder,
             last: None,
+            last_target: None,
+            backward: Default::default(),
         };
         me.advance_to(target_source_frame)?;
         Ok(me)
@@ -322,6 +330,15 @@ impl ActiveClipDecoder {
         &mut self,
         target: FrameIdx,
     ) -> Result<Option<Arc<vv_media::FrameYuv420>>, ExportError> {
+        let going_back = self.last_target.is_some_and(|last| target < last);
+        self.last_target = Some(target);
+        if let Some(frame) = self.backward.get(&target) {
+            return Ok(Some(frame.clone()));
+        }
+        if going_back {
+            return self.decode_block_ending_at(target);
+        }
+        self.backward.clear();
         if let Some((idx, frame)) = &self.last
             && *idx >= target
         {
@@ -337,6 +354,35 @@ impl ActiveClipDecoder {
                 None => return Ok(None),
             }
         }
+    }
+}
+
+impl ActiveClipDecoder {
+    /// Seeks before `target` and keeps the block of frames up to it, so the
+    /// following backward requests are served without seeking again.
+    fn decode_block_ending_at(
+        &mut self,
+        target: FrameIdx,
+    ) -> Result<Option<Arc<vv_media::FrameYuv420>>, ExportError> {
+        self.backward.clear();
+        let start = (target - BACKWARD_BLOCK + 1).max(0);
+        let secs = start as f64 / self.decoder.fps().as_f64().max(1e-9);
+        self.decoder
+            .seek_to_time(secs)
+            .map_err(ExportError::failed)?;
+        let mut found = None;
+        while let Some((idx, frame)) = self.decoder.next_frame().map_err(ExportError::failed)? {
+            if idx >= start {
+                self.backward.insert(idx, frame.clone());
+            }
+            self.last = Some((idx, frame.clone()));
+            if idx >= target {
+                found = Some(frame);
+                break;
+            }
+        }
+        // Past the end of the stream: the last frame decoded.
+        Ok(found.or_else(|| self.backward.values().next_back().cloned()))
     }
 }
 

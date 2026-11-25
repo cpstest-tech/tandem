@@ -28,3 +28,15 @@ pub use mixer::{
 };
 pub use stretch::{STRETCH_CHUNK_FRAMES, Stretcher, stretch_samples};
 pub use stretched::{StretchInput, StretchRequest};
+
+/// Reverses interleaved samples frame by frame, keeping the channel order.
+pub fn reverse_frames(samples: &mut [f32], channels: u16) {
+    let channels = channels.max(1) as usize;
+    let frames = samples.len() / channels;
+    for i in 0..frames / 2 {
+        let j = frames - 1 - i;
+        for c in 0..channels {
+            samples.swap(i * channels + c, j * channels + c);
+        }
+    }
+}

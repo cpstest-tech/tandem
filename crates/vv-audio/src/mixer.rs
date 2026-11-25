@@ -1097,7 +1097,9 @@ fn collect_clips(
             let Some(item) = project.media_pool.get(*media_id) else {
                 continue;
             };
-            let pitch_corrected = clip.pitch_correction && !clip.speed().is_one();
+            // A reversed clip is rendered whole, backwards, through the stretch path.
+            let pitch_corrected =
+                (clip.pitch_correction && !clip.speed().is_one()) || clip.reversed;
             let span = ClipSpan::new(clip, fps, sample_rate);
             // The stretch starts from the start of the clip.
             let mixed = range.as_ref().filter(|_| !pitch_corrected);
@@ -1144,17 +1146,21 @@ fn collect_clips(
                         stable_hash((item.content_hash, clip.audio_stream_index)),
                     ),
                 };
-                let key = stable_hash((
+                let mut key = stable_hash((
                     content,
                     (frames.start, frames.end),
                     span.step.to_bits(),
                     (sample_rate, channels),
                 ));
+                if clip.reversed {
+                    key = stable_hash((key, "reversed"));
+                }
                 let request = StretchRequest {
                     project,
                     input,
                     frames,
                     tempo: span.step,
+                    reverse: clip.reversed,
                     sample_rate,
                     channels,
                     key,

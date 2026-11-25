@@ -1140,6 +1140,7 @@ fn command_label(label: vv_core::CommandLabel) -> std::borrow::Cow<'static, str>
         L::ApplyPreset => t!("history.apply_preset"),
         L::ClipSpeed => t!("history.clip_speed"),
         L::FreezeFrame => t!("history.freeze_frame"),
+        L::ReverseClips => t!("history.reverse_clips"),
         L::RemoveSilences => t!("history.remove_silences"),
         L::AutoCut => t!("auto_cut.title"),
         L::TextCut => t!("transcript.history_cut"),
