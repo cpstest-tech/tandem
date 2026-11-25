@@ -1149,6 +1149,8 @@ fn command_label(label: vv_core::CommandLabel) -> std::borrow::Cow<'static, str>
         L::RemoveAutoZoom => t!("auto_zoom.remove"),
         L::Reframe => t!("reframe.title"),
         L::RemoveReframe => t!("reframe.remove"),
+        L::Stabilize => t!("stabilize.title"),
+        L::RemoveStabilize => t!("stabilize.remove"),
         L::Dub => t!("dub.history"),
         L::DubLanguage => t!("dub.history_language"),
         L::BeatMarkers => t!("beat.markers_step"),

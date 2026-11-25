@@ -89,16 +89,34 @@ impl VenturiApp {
         let mut chosen: Option<Option<Canvas>> = None;
         let mut pick_image = false;
 
+        let shown_color = match &current {
+            Some(Canvas::Color(c)) => to_color32(*c),
+            _ => to_color32(SWATCHES[6]),
+        };
         ui.horizontal_wrapped(|ui| {
-            for (option, label) in [
-                (Kind::None, t!("props.canvas_none")),
-                (Kind::Blur, t!("props.canvas_blur")),
-                (Kind::Color, t!("props.canvas_color")),
-                (Kind::Image, t!("props.canvas_image")),
+            for (option, label, hint) in [
+                (
+                    Kind::None,
+                    t!("props.canvas_none"),
+                    t!("props.canvas_none_hint"),
+                ),
+                (
+                    Kind::Blur,
+                    t!("props.canvas_blur"),
+                    t!("props.canvas_blur_hint"),
+                ),
+                (
+                    Kind::Color,
+                    t!("props.canvas_color"),
+                    t!("props.canvas_color_hint"),
+                ),
+                (
+                    Kind::Image,
+                    t!("props.canvas_image"),
+                    t!("props.canvas_image_hint"),
+                ),
             ] {
-                if ui
-                    .add(egui::Button::selectable(kind == option, label))
-                    .clicked()
+                if canvas_tile(ui, option, kind == option, &label, &hint, shown_color).clicked()
                     && kind != option
                 {
                     match option {
@@ -232,6 +250,154 @@ impl VenturiApp {
         self.session
             .history
             .end_group_as(group, vv_core::CommandLabel::Canvas);
+    }
+}
+
+const PREVIEW: egui::Vec2 = egui::vec2(64.0, 36.0);
+const SKY: egui::Color32 = egui::Color32::from_rgb(0x6f, 0xa8, 0xdc);
+const SUN: egui::Color32 = egui::Color32::from_rgb(0xff, 0xd2, 0x5a);
+const GROUND: egui::Color32 = egui::Color32::from_rgb(0x4c, 0x9a, 0x5b);
+
+/// A choice drawn as what it does: a vertical clip in a wide frame, the
+/// sides filled as the choice would fill them.
+fn canvas_tile(
+    ui: &mut egui::Ui,
+    kind: Kind,
+    selected: bool,
+    label: &str,
+    hint: &str,
+    color: egui::Color32,
+) -> egui::Response {
+    let pad = theme::SPACE_1;
+    let label_h = theme::FONT_SMALL + 4.0;
+    let size = PREVIEW + egui::vec2(2.0 * pad, 2.0 * pad + label_h);
+    let (rect, response) = ui.allocate_exact_size(size, egui::Sense::click());
+    let response = response.on_hover_text(hint);
+    if ui.is_rect_visible(rect) {
+        let painter = ui.painter();
+        let fill = if selected {
+            theme::BG_SELECTED
+        } else if response.hovered() {
+            theme::BG_RAISED_HOVER
+        } else {
+            theme::BG_RAISED
+        };
+        painter.rect_filled(rect, theme::RADIUS_CONTROL, fill);
+        if selected {
+            painter.rect_stroke(
+                rect,
+                theme::RADIUS_CONTROL,
+                egui::Stroke::new(1.5, theme::ACCENT),
+                egui::StrokeKind::Inside,
+            );
+        }
+        let frame = egui::Rect::from_min_size(rect.min + egui::vec2(pad, pad), PREVIEW);
+        paint_canvas_preview(&painter.with_clip_rect(frame), frame, kind, color);
+        painter.text(
+            egui::pos2(rect.center().x, frame.bottom() + pad / 2.0 + label_h / 2.0),
+            egui::Align2::CENTER_CENTER,
+            label,
+            egui::FontId::proportional(theme::FONT_SMALL),
+            if selected {
+                theme::TEXT_PRIMARY
+            } else {
+                theme::TEXT_SECONDARY
+            },
+        );
+    }
+    response
+}
+
+fn paint_canvas_preview(
+    painter: &egui::Painter,
+    frame: egui::Rect,
+    kind: Kind,
+    color: egui::Color32,
+) {
+    let clip = egui::Rect::from_center_size(
+        frame.center(),
+        egui::vec2(frame.height() * 9.0 / 16.0, frame.height()),
+    );
+    match kind {
+        Kind::None => {
+            painter.rect_filled(frame, 0.0, egui::Color32::BLACK);
+        }
+        Kind::Blur => paint_blurred_scene(painter, frame),
+        Kind::Color => {
+            painter.rect_filled(frame, 0.0, color);
+        }
+        Kind::Image => paint_picture(painter, frame),
+    }
+    paint_scene(&painter.with_clip_rect(clip), clip);
+    painter.rect_stroke(
+        clip,
+        0.0,
+        egui::Stroke::new(1.0, egui::Color32::from_black_alpha(120)),
+        egui::StrokeKind::Outside,
+    );
+}
+
+/// The clip itself: sky, sun and a hill.
+fn paint_scene(painter: &egui::Painter, rect: egui::Rect) {
+    painter.rect_filled(rect, 0.0, SKY);
+    let unit = rect.width().min(rect.height());
+    painter.circle_filled(rect.lerp_inside(egui::vec2(0.68, 0.28)), unit * 0.16, SUN);
+    painter.circle_filled(
+        rect.lerp_inside(egui::vec2(0.3, 1.05)),
+        rect.height() * 0.42,
+        GROUND,
+    );
+    painter.rect_filled(
+        egui::Rect::from_min_max(rect.lerp_inside(egui::vec2(0.0, 0.82)), rect.max),
+        0.0,
+        GROUND,
+    );
+}
+
+/// The clip enlarged to fill the frame with its shapes melted into halos.
+fn paint_blurred_scene(painter: &egui::Painter, frame: egui::Rect) {
+    painter.rect_filled(frame, 0.0, SKY.gamma_multiply(0.8));
+    let unit = frame.height();
+    let sun = frame.lerp_inside(egui::vec2(0.75, 0.1));
+    for (radius, alpha) in [(0.7, 0.18), (0.5, 0.25), (0.32, 0.35)] {
+        painter.circle_filled(sun, unit * radius, SUN.gamma_multiply(alpha));
+    }
+    let ground_top = frame.lerp_inside(egui::vec2(0.0, 0.55)).y;
+    for (step, alpha) in [(0.0, 0.25), (0.12, 0.45), (0.24, 0.8)] {
+        let top = ground_top + unit * step;
+        painter.rect_filled(
+            egui::Rect::from_min_max(egui::pos2(frame.left(), top), frame.max),
+            0.0,
+            GROUND.gamma_multiply(alpha),
+        );
+    }
+    painter.rect_filled(frame, 0.0, egui::Color32::from_black_alpha(50));
+}
+
+/// A picture other than the clip: a sunset over mountains.
+fn paint_picture(painter: &egui::Painter, frame: egui::Rect) {
+    let horizon = frame.lerp_inside(egui::vec2(0.0, 0.55)).y;
+    painter.rect_filled(
+        egui::Rect::from_min_max(frame.min, egui::pos2(frame.right(), horizon)),
+        0.0,
+        egui::Color32::from_rgb(0xf0, 0x96, 0x5a),
+    );
+    painter.rect_filled(
+        egui::Rect::from_min_max(egui::pos2(frame.left(), horizon), frame.max),
+        0.0,
+        egui::Color32::from_rgb(0x6b, 0x4a, 0x8c),
+    );
+    let mountain = egui::Color32::from_rgb(0x3b, 0x2e, 0x5a);
+    for (left, peak, right, height) in [(-0.1, 0.12, 0.35, 0.45), (0.62, 0.85, 1.1, 0.5)] {
+        painter.add(egui::Shape::convex_polygon(
+            vec![
+                frame.lerp_inside(egui::vec2(left, 1.0)),
+                frame.lerp_inside(egui::vec2(peak, 1.0 - height)),
+                frame.lerp_inside(egui::vec2(right, 1.0)),
+            ],
+            mountain,
+            egui::Stroke::NONE,
+        ));
     }
 }
 

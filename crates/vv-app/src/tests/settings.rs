@@ -80,7 +80,7 @@ fn save_then_load_keeps_custom_shortcuts_and_defaults_for_the_rest() {
     settings.keymap.remove(Action::ZoomIn, 1);
     settings.language = Language::Italian;
     settings.proxy_enabled = true;
-    settings.proxy_auto = false;
+    settings.proxy_auto = true;
     settings.proxy_quality = ProxyQuality::High;
     settings.preview_resolution = PreviewResolution::Quarter;
     settings.lookahead_secs = 7.5;
@@ -96,7 +96,7 @@ fn save_then_load_keeps_custom_shortcuts_and_defaults_for_the_rest() {
 
     std::fs::write(
         &path,
-        r#"{"keymap_version": 2, "shortcuts": {"split": ["Alt+K"]}, "proxy_enabled": true}"#,
+        r#"{"keymap_version": 2, "shortcuts": {"split": ["Alt+K"]}, "proxy_enabled": true, "auto_proxies": true}"#,
     )
     .unwrap();
     let loaded = Settings::load(&path);
@@ -112,7 +112,7 @@ fn save_then_load_keeps_custom_shortcuts_and_defaults_for_the_rest() {
         Keymap::default().shortcuts(Action::Undo)
     );
     assert!(!loaded.proxy_enabled);
-    assert!(loaded.proxy_auto, "heavy media get proxies by default");
+    assert!(!loaded.proxy_auto, "no proxy is generated unless asked for");
     assert_eq!(loaded.proxy_quality, ProxyQuality::default());
     assert_eq!(loaded.preview_resolution, PreviewResolution::Full);
     assert_eq!(
@@ -726,7 +726,11 @@ fn only_heavy_media_get_proxies_automatically() {
             ..Default::default()
         },
     };
-    let settings = Settings::default();
+    assert!(!Settings::default().wants_proxy(&meta("hevc", 1920, 1080, 60)));
+    let settings = Settings {
+        proxy_auto: true,
+        ..Settings::default()
+    };
     assert!(settings.wants_proxy(&meta("hevc", 1920, 1080, 30)));
     assert!(settings.wants_proxy(&meta("h264", 1920, 1080, 60)));
     assert!(settings.wants_proxy(&meta("h264", 3840, 2160, 30)));

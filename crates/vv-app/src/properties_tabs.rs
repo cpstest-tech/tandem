@@ -198,10 +198,6 @@ fn placeholder_checkbox_section(ui: &mut egui::Ui, title: &str) {
     }
 }
 
-pub(crate) fn stabilize_section(ui: &mut egui::Ui) {
-    placeholder_checkbox_section(ui, &t!("props.stabilize"));
-}
-
 type ChromaEdit = Box<dyn Fn(&mut vv_core::ClipFilter)>;
 
 impl VenturiApp {

@@ -769,17 +769,33 @@ props.canvas_none:
   en: "None"
   it: "Nessuno"
 
+props.canvas_none_hint:
+  en: "Black bars around a clip that does not fill the frame"
+  it: "Bande nere attorno a una clip che non riempie il frame"
+
 props.canvas_blur:
   en: "Blur"
   it: "Sfocatura"
+
+props.canvas_blur_hint:
+  en: "The clip itself, enlarged and blurred, fills the sides"
+  it: "La clip stessa, ingrandita e sfocata, riempie i lati"
 
 props.canvas_color:
   en: "Color"
   it: "Colore"
 
+props.canvas_color_hint:
+  en: "A solid color fills the sides"
+  it: "Un colore pieno riempie i lati"
+
 props.canvas_image:
   en: "Image"
   it: "Immagine"
+
+props.canvas_image_hint:
+  en: "A picture of your choice fills the sides"
+  it: "Un'immagine a scelta riempie i lati"
 
 props.canvas_strength:
   en: "Strength"

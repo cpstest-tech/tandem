@@ -76,6 +76,7 @@ mod silence_dialog;
 mod slip_viewer;
 mod spawn;
 mod speed_dialog;
+mod stabilize;
 mod sticker_anim;
 mod stickers;
 mod stickers_ui;
@@ -631,6 +632,7 @@ struct VenturiApp {
     auto_cut: auto_cut::State,
     auto_zoom: auto_zoom::State,
     reframe: reframe::State,
+    stabilize: stabilize::State,
     dub: dub::State,
     beat: beat_sync::State,
     vertical: vertical_layout::State,
@@ -792,6 +794,7 @@ impl Default for VenturiApp {
             auto_cut: auto_cut::State::default(),
             auto_zoom: auto_zoom::State::default(),
             reframe: reframe::State::default(),
+            stabilize: stabilize::State::default(),
             dub: dub::State::default(),
             beat: beat_sync::State::default(),
             vertical: vertical_layout::State::default(),

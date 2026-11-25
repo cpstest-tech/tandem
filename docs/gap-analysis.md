@@ -104,7 +104,7 @@ the engine (`vv-media`, `vv-render`, `vv-audio`, the export/frame pipeline in
 | Slider/drag/type, live, ↺ reset per control and section | exists | `properties_panel.rs` (reset per parameter and section already there) |
 | Double-click slider knob = reset | create | `properties_panel.rs` |
 | Basic: scale, position, rotate, blend + opacity | exists | 15 blend modes (spec lists 4) |
-| Stabilize | placeholder | none in the engine |
+| Stabilize | done | camera motion measured by `vv-reframe::stabilize`, cancelled with generated keyframes (`vv_core::stabilize`) |
 | Canvas (blur/colour background) | create | colour: solid clip under the clip; blur: duplicate layer + gaussian blur, done in the model without the engine (heavier) |
 | Chroma key | create ⚙ | needs a shader |
 | Auto Cutout | placeholder | none |
