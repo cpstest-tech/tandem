@@ -78,10 +78,19 @@ pub enum Action {
     ExtractAudio,
     GroupClips,
     ToggleLinkage,
+    InsertEdit,
+    OverwriteEdit,
+    AppendEdit,
+    NudgeLeft,
+    NudgeRight,
+    NudgeLeft10,
+    NudgeRight10,
+    MatchFrame,
+    CloseGaps,
 }
 
 impl Action {
-    pub const ALL: [Action; 64] = [
+    pub const ALL: [Action; 73] = [
         Action::TogglePlayback,
         Action::FastPlayback,
         Action::StepBackward,
@@ -146,6 +155,15 @@ impl Action {
         Action::ExtractAudio,
         Action::GroupClips,
         Action::ToggleLinkage,
+        Action::InsertEdit,
+        Action::OverwriteEdit,
+        Action::AppendEdit,
+        Action::NudgeLeft,
+        Action::NudgeRight,
+        Action::NudgeLeft10,
+        Action::NudgeRight10,
+        Action::MatchFrame,
+        Action::CloseGaps,
     ];
 
     /// Key in the settings file: must never be changed.
@@ -215,6 +233,15 @@ impl Action {
             Action::ExtractAudio => "extract_audio",
             Action::GroupClips => "group_clips",
             Action::ToggleLinkage => "toggle_linkage",
+            Action::InsertEdit => "insert_edit",
+            Action::OverwriteEdit => "overwrite_edit",
+            Action::AppendEdit => "append_edit",
+            Action::NudgeLeft => "nudge_left",
+            Action::NudgeRight => "nudge_right",
+            Action::NudgeLeft10 => "nudge_left_10",
+            Action::NudgeRight10 => "nudge_right_10",
+            Action::MatchFrame => "match_frame",
+            Action::CloseGaps => "close_gaps",
         }
     }
 
@@ -266,7 +293,15 @@ impl Action {
             | Action::DeleteRight
             | Action::Duplicate
             | Action::ExtractAudio
-            | Action::GroupClips => t!("action_category.edit"),
+            | Action::GroupClips
+            | Action::InsertEdit
+            | Action::OverwriteEdit
+            | Action::AppendEdit
+            | Action::NudgeLeft
+            | Action::NudgeRight
+            | Action::NudgeLeft10
+            | Action::NudgeRight10
+            | Action::CloseGaps => t!("action_category.edit"),
             Action::NewProject
             | Action::OpenProject
             | Action::SaveProject
@@ -288,6 +323,7 @@ impl Action {
             | Action::ToggleSnapping
             | Action::TogglePreviewAxis
             | Action::ToggleLinkage
+            | Action::MatchFrame
             | Action::FitTimeline
             | Action::MakeCompound
             | Action::UngroupCompound => {
@@ -417,6 +453,18 @@ impl Action {
             Action::ShuttleForward => vec![plain(Key::L)],
             Action::ExtractAudio => vec![ctrl_shift(Key::S)],
             Action::GroupClips => vec![ctrl(Key::G)],
+            Action::InsertEdit => vec![plain(Key::Comma)],
+            Action::OverwriteEdit => vec![plain(Key::Period)],
+            Action::AppendEdit => vec![plain(Key::E)],
+            Action::NudgeLeft => vec![ctrl(Key::ArrowLeft)],
+            Action::NudgeRight => vec![ctrl(Key::ArrowRight)],
+            Action::NudgeLeft10 => vec![ctrl_shift(Key::ArrowLeft)],
+            Action::NudgeRight10 => vec![ctrl_shift(Key::ArrowRight)],
+            Action::MatchFrame => vec![plain(Key::F)],
+            Action::CloseGaps => vec![Shortcut {
+                alt: true,
+                ..plain(Key::Backspace)
+            }],
         }
     }
 

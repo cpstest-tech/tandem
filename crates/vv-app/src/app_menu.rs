@@ -127,6 +127,31 @@ impl VenturiApp {
                     self.run_timeline_command(&ctx, command);
                 }
             }
+            for (action, mode) in [
+                (Action::InsertEdit, vv_core::edit::EditMode::Insert),
+                (Action::OverwriteEdit, vv_core::edit::EditMode::Overwrite),
+                (Action::AppendEdit, vv_core::edit::EditMode::Append),
+            ] {
+                if pressed(action) {
+                    self.three_point_edit(mode);
+                }
+            }
+            for (action, delta) in [
+                (Action::NudgeLeft, -1),
+                (Action::NudgeRight, 1),
+                (Action::NudgeLeft10, -10),
+                (Action::NudgeRight10, 10),
+            ] {
+                if pressed(action) {
+                    self.nudge_selected(delta);
+                }
+            }
+            if pressed(Action::MatchFrame) {
+                self.match_frame();
+            }
+            if pressed(Action::CloseGaps) {
+                self.close_all_gaps();
+            }
             if pressed(Action::ToggleMagnet) {
                 self.timeline_state.magnet = !self.timeline_state.magnet;
             }

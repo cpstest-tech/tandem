@@ -28,6 +28,7 @@ mod cover;
 mod downloader;
 mod downloader_ui;
 mod dub;
+mod edit_actions;
 mod eq_panel;
 mod export_dialog;
 mod export_modal;

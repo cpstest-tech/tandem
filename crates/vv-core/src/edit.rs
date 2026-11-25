@@ -837,3 +837,158 @@ pub fn slip_clips(
 #[cfg(test)]
 #[path = "tests/edit.rs"]
 mod tests;
+
+/// How a three-point edit makes room on the timeline.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EditMode {
+    /// Everything from `at` on moves right by the new clip's length.
+    Insert,
+    /// The new clip replaces what was under it.
+    Overwrite,
+    /// At the end of the target video track (of the timeline without one).
+    Append,
+}
+
+/// Where an append lands: after the last clip of the target video track,
+/// or of the whole timeline for audio.
+pub fn append_point(project: &Project, timeline_id: TimelineId, video: Option<usize>) -> FrameIdx {
+    let tl = &project.timelines[timeline_id];
+    match video.and_then(|t| tl.tracks.get(t)) {
+        Some(track) => track
+            .clips
+            .iter()
+            .map(Clip::timeline_end)
+            .max()
+            .unwrap_or(0),
+        None => tl.total_frames(),
+    }
+}
+
+/// Puts `insert` on the timeline at `at` (ignored by `Append`) the way
+/// `mode` says, in one undo step. Returns the new clips.
+pub fn three_point_edit(
+    project: &mut Project,
+    history: &mut History,
+    timeline_id: TimelineId,
+    insert: MediaInsert,
+    at: FrameIdx,
+    mode: EditMode,
+    tracks: TargetTracks,
+) -> Option<Vec<ClipRef>> {
+    let meta = project.media_pool.get(insert.media_id)?.meta.clone();
+    let rate = Rational::conform_rate(project.timelines[timeline_id].fps, meta.fps);
+    let len = Clip::from_source_range(
+        ClipId(0),
+        ClipSource::Media(insert.media_id),
+        insert.source_in,
+        insert.source_out,
+        0,
+        rate,
+    )
+    .timeline_len;
+    if len <= 0 {
+        return None;
+    }
+    let group = history.begin_group();
+    let at = match mode {
+        EditMode::Append => append_point(project, timeline_id, tracks.video),
+        _ => at.max(0),
+    };
+    match mode {
+        EditMode::Insert => {
+            split_clips(project, history, timeline_id, at, None);
+            let tl = &project.timelines[timeline_id];
+            let moves: Vec<(ClipId, usize, usize, FrameIdx)> = tl
+                .tracks
+                .iter()
+                .enumerate()
+                .filter(|(_, t)| !t.locked)
+                .flat_map(|(i, t)| {
+                    t.clips
+                        .iter()
+                        .filter(|c| c.timeline_start >= at)
+                        .map(move |c| (c.id, i, i, c.timeline_start + len))
+                })
+                .collect();
+            if !moves.is_empty() {
+                history.do_command(project, Box::new(MoveClips::new(timeline_id, moves)));
+            }
+        }
+        EditMode::Overwrite => {
+            let tl = &project.timelines[timeline_id];
+            let streams = inserted_audio_streams(
+                &meta,
+                insert,
+                tl.first_track_index(TrackKind::Audio).is_some(),
+            );
+            let mut ranges: Vec<(usize, FrameIdx, FrameIdx)> = Vec::new();
+            if insert.video
+                && meta.has_video
+                && let Some(video) = tracks.video
+            {
+                ranges.push((video, at, at + len));
+            }
+            ranges.extend(
+                tl.tracks_of_kind(TrackKind::Audio)
+                    .filter(|(_, t)| !t.locked)
+                    .take(streams)
+                    .map(|(i, _)| (i, at, at + len)),
+            );
+            let mut commands = Vec::new();
+            crate::make_room_for_ranges(project, timeline_id, &ranges, &[], &mut commands);
+            if !commands.is_empty() {
+                history.do_command(
+                    project,
+                    Box::new(CompositeCommand::new(CommandLabel::InsertClips, commands)),
+                );
+            }
+        }
+        EditMode::Append => {}
+    }
+    let inserted = insert_media(project, history, timeline_id, insert, at, tracks);
+    history.end_group_as(group, CommandLabel::InsertClips);
+    inserted
+}
+
+/// The stretches where no track has anything, from frame 0 to the last
+/// clip: the holes a ripple can close without breaking any sync.
+pub fn timeline_gaps(project: &Project, timeline_id: TimelineId) -> Vec<(FrameIdx, FrameIdx)> {
+    let mut spans: Vec<(FrameIdx, FrameIdx)> = project.timelines[timeline_id]
+        .tracks
+        .iter()
+        .flat_map(|t| t.clips.iter().map(|c| (c.timeline_start, c.timeline_end())))
+        .collect();
+    spans.sort();
+    let mut gaps = Vec::new();
+    let mut reached = 0;
+    for (start, end) in spans {
+        if start > reached {
+            gaps.push((reached, start));
+        }
+        reached = reached.max(end);
+    }
+    gaps
+}
+
+/// Closes every gap of `timeline_gaps`, in one undo step. Returns how many.
+pub fn close_all_gaps(
+    project: &mut Project,
+    history: &mut History,
+    timeline_id: TimelineId,
+) -> usize {
+    let gaps = timeline_gaps(project, timeline_id);
+    if gaps.is_empty() {
+        return 0;
+    }
+    let mark = history.begin_group();
+    // From the last one: closing it leaves the earlier positions unchanged.
+    for &(start, end) in gaps.iter().rev() {
+        history.do_command(
+            project,
+            Box::new(RippleDeleteGap::new(timeline_id, start, end - start)),
+        );
+    }
+    cut_overlaps(project, history, timeline_id);
+    history.end_group_as(mark, CommandLabel::RippleDelete);
+    gaps.len()
+}

@@ -774,3 +774,117 @@ fn first_free_track_skips_busy_taken_and_ignores_the_ignored_clips() {
         Some(0)
     );
 }
+
+fn media_insert(media: MediaId, source: (FrameIdx, FrameIdx)) -> MediaInsert {
+    MediaInsert {
+        media_id: media,
+        source_in: source.0,
+        source_out: source.1,
+        video: true,
+        audio: true,
+    }
+}
+
+fn three_point_setup() -> (Project, History, TimelineId, MediaId) {
+    let (mut project, tl) = project_with_tracks(&[TrackKind::Video, TrackKind::Audio]);
+    let mut history = History::default();
+    put(&mut project, &mut history, tl, 0, 0, 100);
+    put(&mut project, &mut history, tl, 1, 0, 100);
+    let media = media(&mut project, 1);
+    (project, history, tl, media)
+}
+
+fn starts(project: &Project, tl: TimelineId, track: usize) -> Vec<(FrameIdx, FrameIdx)> {
+    project.timelines[tl].tracks[track]
+        .clips
+        .iter()
+        .map(|c| (c.timeline_start, c.timeline_len))
+        .collect()
+}
+
+#[test]
+fn an_insert_edit_splits_at_the_point_and_pushes_the_rest() {
+    let (mut project, mut history, tl, media) = three_point_setup();
+    let tracks = TargetTracks {
+        video: Some(0),
+        extra_audio: None,
+    };
+    let clips = three_point_edit(
+        &mut project,
+        &mut history,
+        tl,
+        media_insert(media, (10, 40)),
+        50,
+        EditMode::Insert,
+        tracks,
+    )
+    .unwrap();
+    assert_eq!(clips.len(), 2);
+    assert_eq!(starts(&project, tl, 0), vec![(0, 50), (50, 30), (80, 50)]);
+    assert_eq!(starts(&project, tl, 1), vec![(0, 50), (50, 30), (80, 50)]);
+    history.undo(&mut project);
+    assert_eq!(starts(&project, tl, 0), vec![(0, 100)], "one undo step");
+}
+
+#[test]
+fn an_overwrite_edit_replaces_what_is_under_it() {
+    let (mut project, mut history, tl, media) = three_point_setup();
+    let tracks = TargetTracks {
+        video: Some(0),
+        extra_audio: None,
+    };
+    three_point_edit(
+        &mut project,
+        &mut history,
+        tl,
+        media_insert(media, (0, 20)),
+        30,
+        EditMode::Overwrite,
+        tracks,
+    )
+    .unwrap();
+    assert_eq!(starts(&project, tl, 0), vec![(0, 30), (30, 20), (50, 50)]);
+    assert_eq!(starts(&project, tl, 1), vec![(0, 30), (30, 20), (50, 50)]);
+    assert_eq!(project.timelines[tl].tracks.len(), 2, "no new audio track");
+}
+
+#[test]
+fn an_append_edit_lands_after_the_last_clip() {
+    let (mut project, mut history, tl, media) = three_point_setup();
+    let tracks = TargetTracks {
+        video: Some(0),
+        extra_audio: None,
+    };
+    three_point_edit(
+        &mut project,
+        &mut history,
+        tl,
+        media_insert(media, (0, 25)),
+        5,
+        EditMode::Append,
+        tracks,
+    )
+    .unwrap();
+    assert_eq!(starts(&project, tl, 0), vec![(0, 100), (100, 25)]);
+}
+
+#[test]
+fn closing_all_gaps_only_removes_the_stretches_empty_on_every_track() {
+    let (mut project, tl) = project_with_tracks(&[TrackKind::Video, TrackKind::Audio]);
+    let mut history = History::default();
+    put(&mut project, &mut history, tl, 0, 10, 20);
+    put(&mut project, &mut history, tl, 0, 60, 10);
+    // The audio covers part of the video's hole: only 40..50 is empty everywhere.
+    put(&mut project, &mut history, tl, 1, 25, 15);
+    assert_eq!(timeline_gaps(&project, tl), vec![(0, 10), (40, 60)]);
+    assert_eq!(close_all_gaps(&mut project, &mut history, tl), 2);
+    assert_eq!(starts(&project, tl, 0), vec![(0, 20), (30, 10)]);
+    assert_eq!(starts(&project, tl, 1), vec![(15, 15)]);
+    assert!(timeline_gaps(&project, tl).is_empty());
+    history.undo(&mut project);
+    assert_eq!(
+        starts(&project, tl, 0),
+        vec![(10, 20), (60, 10)],
+        "one undo step"
+    );
+}

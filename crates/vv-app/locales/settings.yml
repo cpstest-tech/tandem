@@ -442,6 +442,33 @@ action.extract_audio:
 action.group_clips:
   en: "Group clips"
   it: "Raggruppa clip"
+action.insert_edit:
+  en: "Insert edit"
+  it: "Inserisci (sposta il resto)"
+action.overwrite_edit:
+  en: "Overwrite edit"
+  it: "Sovrascrivi"
+action.append_edit:
+  en: "Append to the end"
+  it: "Aggiungi in fondo"
+action.nudge_left:
+  en: "Nudge left 1 frame"
+  it: "Sposta a sinistra di 1 frame"
+action.nudge_right:
+  en: "Nudge right 1 frame"
+  it: "Sposta a destra di 1 frame"
+action.nudge_left_10:
+  en: "Nudge left 10 frames"
+  it: "Sposta a sinistra di 10 frame"
+action.nudge_right_10:
+  en: "Nudge right 10 frames"
+  it: "Sposta a destra di 10 frame"
+action.match_frame:
+  en: "Match frame"
+  it: "Fotogramma corrispondente"
+action.close_gaps:
+  en: "Close all gaps"
+  it: "Chiudi tutti i buchi"
 settings.gemini_key:
   en: "Gemini API key (AI Clips)"
   it: "Chiave API Gemini (AI Clips)"
