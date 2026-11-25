@@ -124,7 +124,7 @@ fn smooth(values: &[f32], radius: usize) -> Vec<f32> {
     let radius = radius.min(n - 1);
     let sigma = radius as f32 / 2.0;
     let weights: Vec<f32> = (0..=radius)
-        .map(|d| (-(d * d) as f32 / (2.0 * sigma * sigma)).exp())
+        .map(|d| (-((d * d) as f32) / (2.0 * sigma * sigma)).exp())
         .collect();
     let at = |i: isize| -> f32 {
         let last = n as isize - 1;
