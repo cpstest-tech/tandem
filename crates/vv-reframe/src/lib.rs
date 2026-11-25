@@ -13,6 +13,7 @@ use vv_core::reframe::{Analysis, Face, Sample};
 use vv_media::{Decoder, FrameYuv420, HwDevice, HwPriority, RgbReader};
 
 mod cuts;
+pub mod stabilize;
 
 pub use cuts::{FrameHistogram, find_cuts};
 

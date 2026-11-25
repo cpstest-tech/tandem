@@ -93,6 +93,8 @@ pub enum CommandLabel {
     RemoveAutoZoom,
     Reframe,
     RemoveReframe,
+    Stabilize,
+    RemoveStabilize,
     Dub,
     DubLanguage,
     BeatMarkers,

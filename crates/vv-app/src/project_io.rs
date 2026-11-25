@@ -947,6 +947,7 @@ impl VenturiApp {
         self.take = None;
         self.dub = dub::State::default();
         self.reframe = reframe::State::default();
+        self.stabilize = stabilize::State::default();
         self.transcript = transcript::State::default();
         self.auto_cut.modal = None;
         self.seen_epoch = self.session.epoch();

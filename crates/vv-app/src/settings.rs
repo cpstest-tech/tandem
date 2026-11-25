@@ -947,7 +947,7 @@ impl Default for Settings {
             kinetic_scroll: true,
             kinetic_scroll_media_pool: true,
             proxy_enabled: false,
-            proxy_auto: true,
+            proxy_auto: false,
             proxy_quality: ProxyQuality::default(),
             preview_resolution: PreviewResolution::default(),
             lookahead_secs: crate::render_ahead::DEFAULT_LOOKAHEAD_SECS,
@@ -1038,8 +1038,10 @@ struct SettingsFile {
     /// proxies were on by default, it does not reflect a user choice.
     #[serde(default)]
     use_proxies: Option<bool>,
+    /// Not `auto_proxies`: that key was always saved as `true` while heavy
+    /// media got proxies by default, it does not reflect a user choice.
     #[serde(default)]
-    auto_proxies: Option<bool>,
+    heavy_media_proxies: Option<bool>,
     #[serde(default)]
     proxy_quality: Option<String>,
     #[serde(default)]
@@ -1249,7 +1251,7 @@ impl Settings {
         settings.kinetic_scroll = file.kinetic_scroll.unwrap_or(true);
         settings.kinetic_scroll_media_pool = file.kinetic_scroll_media_pool.unwrap_or(true);
         settings.proxy_enabled = file.use_proxies.unwrap_or(settings.proxy_enabled);
-        settings.proxy_auto = file.auto_proxies.unwrap_or(settings.proxy_auto);
+        settings.proxy_auto = file.heavy_media_proxies.unwrap_or(settings.proxy_auto);
         settings.proxy_quality = file
             .proxy_quality
             .as_deref()
@@ -1387,7 +1389,7 @@ impl Settings {
             kinetic_scroll: Some(self.kinetic_scroll),
             kinetic_scroll_media_pool: Some(self.kinetic_scroll_media_pool),
             use_proxies: Some(self.proxy_enabled),
-            auto_proxies: Some(self.proxy_auto),
+            heavy_media_proxies: Some(self.proxy_auto),
             proxy_quality: Some(self.proxy_quality.id().to_owned()),
             preview_resolution: Some(self.preview_resolution.id().to_owned()),
             lookahead_secs: Some(self.lookahead_secs),

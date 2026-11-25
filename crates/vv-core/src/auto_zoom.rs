@@ -103,6 +103,7 @@ pub enum Origin {
     #[default]
     Zoom,
     Reframe,
+    Stabilize,
 }
 
 impl Origin {
@@ -411,6 +412,7 @@ impl SetAutoZoom {
             label: match origin {
                 Origin::Zoom => CommandLabel::RemoveAutoZoom,
                 Origin::Reframe => CommandLabel::RemoveReframe,
+                Origin::Stabilize => CommandLabel::RemoveStabilize,
             },
             ..Self::new(
                 timeline,

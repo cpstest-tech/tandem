@@ -1,0 +1,56 @@
+_version: 2
+
+stabilize.title:
+  en: "Stabilize"
+  it: "Stabilizza"
+stabilize.run:
+  en: "Stabilize"
+  it: "Stabilizza"
+stabilize.remove:
+  en: "Remove stabilization"
+  it: "Rimuovi stabilizzazione"
+stabilize.strength:
+  en: "Strength"
+  it: "Intensità"
+stabilize.max_zoom:
+  en: "Max zoom"
+  it: "Zoom massimo"
+stabilize.max_zoom_hint:
+  en: "The frame is enlarged just enough to hide the moving edges, up to this; beyond it the shake is reduced less."
+  it: "Il fotogramma viene ingrandito quanto basta a nascondere i bordi in movimento, fino a questo valore; oltre, il tremolio viene ridotto meno."
+stabilize.single_clip:
+  en: "Select a single video clip."
+  it: "Seleziona una sola clip video."
+stabilize.select_video:
+  en: "Select a video clip."
+  it: "Seleziona una clip video."
+stabilize.unsupported_clip:
+  en: "Frozen or disabled clips cannot be stabilized."
+  it: "Le clip congelate o disattivate non si possono stabilizzare."
+stabilize.has_keyframes:
+  en: "The clip already has zoom, position or rotation keyframes: remove them to stabilize it."
+  it: "La clip ha già keyframe di zoom, posizione o rotazione: rimuovili per stabilizzarla."
+stabilize.unsupported_transform:
+  en: "Rotated, cropped or offset-anchored clips cannot be stabilized."
+  it: "Le clip ruotate, ritagliate o con il punto di ancoraggio spostato non si possono stabilizzare."
+stabilize.offline:
+  en: "The media file is not reachable."
+  it: "Il file della clip non è raggiungibile."
+stabilize.analysing:
+  en: "Measuring the camera motion…"
+  it: "Misuro il movimento della camera…"
+stabilize.cancel:
+  en: "Cancel"
+  it: "Annulla"
+stabilize.cancelled:
+  en: "Analysis cancelled."
+  it: "Analisi annullata."
+stabilize.error:
+  en: "The analysis failed: %{detail}"
+  it: "L'analisi non è riuscita: %{detail}"
+stabilize.local_note:
+  en: "The motion is measured once on a reduced copy of the frames, then cached for this clip."
+  it: "Il movimento viene misurato una volta su una copia ridotta dei fotogrammi, poi resta in cache per questa clip."
+stabilize.applied:
+  en: "Stabilized, frame enlarged to %{zoom}%."
+  it: "Stabilizzata, fotogramma ingrandito al %{zoom}%."

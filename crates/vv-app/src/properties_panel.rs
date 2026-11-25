@@ -2318,7 +2318,7 @@ impl VenturiApp {
                                                     pending_effects.extend(set_tint_commands(tl, targets, choice));
                                                 }
                                             }
-                                            properties_tabs::stabilize_section(ui);
+                                            self.show_stabilize_section(ui, targets);
                                             self.show_canvas_section(ui, targets, &mut pending_effects);
                                             }
 

@@ -18,6 +18,7 @@ pub mod otio;
 pub mod persistence;
 pub mod pool;
 pub mod reframe;
+pub mod stabilize;
 mod stable_hash;
 pub mod style_pack;
 pub mod text_anim;

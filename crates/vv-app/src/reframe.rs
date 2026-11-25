@@ -669,7 +669,7 @@ impl VenturiApp {
     }
 }
 
-fn percent_row(
+pub(crate) fn percent_row(
     ui: &mut egui::Ui,
     label: &str,
     value: &mut f32,
