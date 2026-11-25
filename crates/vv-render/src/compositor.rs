@@ -930,6 +930,7 @@ struct TexturePool {
     /// Resolved, in `OUTPUT_FORMAT`.
     outputs: Vec<wgpu::Texture>,
     i420: Option<I420Buffers>,
+    rgba_readback: Option<wgpu::Buffer>,
 }
 
 /// Buffer of the I420 conversion, for the size of the last frame.
@@ -1389,12 +1390,17 @@ impl Compositor {
         let align = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
         let padded_bytes_per_row = unpadded_bytes_per_row.div_ceil(align) * align;
 
-        let output_buffer = self.device.create_buffer(&wgpu::BufferDescriptor {
-            label: Some("vv-render readback buffer"),
-            size: (padded_bytes_per_row * height) as wgpu::BufferAddress,
-            usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
-            mapped_at_creation: false,
-        });
+        let size = (padded_bytes_per_row * height) as wgpu::BufferAddress;
+        let mut pool = self.pool.lock().unwrap();
+        if pool.rgba_readback.as_ref().is_none_or(|b| b.size() != size) {
+            pool.rgba_readback = Some(self.device.create_buffer(&wgpu::BufferDescriptor {
+                label: Some("vv-render readback buffer"),
+                size,
+                usage: wgpu::BufferUsages::COPY_DST | wgpu::BufferUsages::MAP_READ,
+                mapped_at_creation: false,
+            }));
+        }
+        let output_buffer = pool.rgba_readback.as_ref().unwrap();
 
         let mut encoder = self
             .device
@@ -1404,7 +1410,7 @@ impl Compositor {
         encoder.copy_texture_to_buffer(
             texture.as_image_copy(),
             wgpu::TexelCopyBufferInfo {
-                buffer: &output_buffer,
+                buffer: output_buffer,
                 layout: wgpu::TexelCopyBufferLayout {
                     offset: 0,
                     bytes_per_row: Some(padded_bytes_per_row),
@@ -1419,7 +1425,7 @@ impl Compositor {
         );
         self.queue.submit(Some(encoder.finish()));
 
-        self.map_read(&output_buffer, |data| {
+        self.map_read(output_buffer, |data| {
             let mut out = Vec::with_capacity((unpadded_bytes_per_row * height) as usize);
             for row in 0..height {
                 let start = (row * padded_bytes_per_row) as usize;

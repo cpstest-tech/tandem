@@ -23,14 +23,17 @@ macro_rules! send_retrying {
                     errno: ffmpeg::ffi::EAGAIN,
                 }) if tries < 5000 => {
                     tries += 1;
-                    drain_packets(
+                    let drained = drain_packets(
                         &mut *$octx,
                         &mut $state.encoder,
                         $state.stream_index,
                         $state.time_base,
                         $state.ost_time_base,
                     )?;
-                    std::thread::sleep(std::time::Duration::from_millis(2));
+                    // Draining freed room: retry at once, wait only on a busy encoder.
+                    if drained == 0 {
+                        std::thread::sleep(std::time::Duration::from_millis(2));
+                    }
                 }
                 other => break other,
             }
@@ -418,7 +421,8 @@ impl Encoder {
             video.stream_index,
             video.time_base,
             video.ost_time_base,
-        )
+        )?;
+        Ok(())
     }
     /// `samples`: interleaved f32 PCM, already at the sample rate/channels declared
     /// in `new`. Buffers internally at AAC frame boundaries
@@ -616,7 +620,8 @@ fn write_audio_chunk(
         audio.stream_index,
         audio.time_base,
         audio.ost_time_base,
-    )
+    )?;
+    Ok(())
 }
 
 /// Adds an audio stream to `octx` and opens its encoder. `aac_fast`: the
@@ -890,14 +895,16 @@ pub(crate) fn drain_packets(
     stream_index: usize,
     time_base: ffmpeg::Rational,
     ost_time_base: ffmpeg::Rational,
-) -> Result<(), crate::MediaError> {
+) -> Result<usize, crate::MediaError> {
     let mut packet = ffmpeg::Packet::empty();
+    let mut written = 0;
     while encoder.receive_packet(&mut packet).is_ok() {
         packet.set_stream(stream_index);
         packet.rescale_ts(time_base, ost_time_base);
         packet.write_interleaved(octx)?;
+        written += 1;
     }
-    Ok(())
+    Ok(written)
 }
 
 /// Copies a dense plane (rows of `row_width` bytes) into a plane of `frame`,

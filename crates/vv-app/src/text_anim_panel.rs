@@ -104,7 +104,9 @@ fn preview(ui: &mut egui::Ui, title: &TitleParams, timeline_size: (u32, u32)) {
         egui::Rect::from_min_max(egui::pos2(0.0, 0.0), egui::pos2(1.0, 1.0)),
         egui::Color32::WHITE,
     );
-    ui.ctx().request_repaint();
+    // Each frame re-rasterises the title on the CPU: 30 fps is plenty for a preview.
+    ui.ctx()
+        .request_repaint_after(std::time::Duration::from_millis(33));
 }
 
 fn slider_row(

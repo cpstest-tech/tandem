@@ -314,7 +314,8 @@ impl ProxyEncoder {
             self.stream_index,
             self.time_base,
             self.ost_time_base,
-        )
+        )?;
+        Ok(())
     }
     fn finish(mut self) -> Result<(), crate::MediaError> {
         self.encoder.send_eof()?;
