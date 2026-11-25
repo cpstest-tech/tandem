@@ -376,23 +376,6 @@ impl VenturiApp {
     }
 }
 
-pub(crate) fn mask_shapes_placeholder(ui: &mut egui::Ui) {
-    ui.add_space(6.0);
-    let (open, _) = section_header(ui, &t!("props.mask_shapes"), false);
-    if open {
-        ui.horizontal_wrapped(|ui| {
-            for label in [
-                t!("props.mask_split"),
-                t!("props.mask_filmstrip"),
-                t!("props.mask_star"),
-                t!("props.mask_heart"),
-            ] {
-                soon(ui.add_enabled(false, egui::Button::new(label)));
-            }
-        });
-    }
-}
-
 pub(crate) fn retouch_tab(ui: &mut egui::Ui) {
     placeholder_checkbox_section(ui, &t!("props.enhance"));
 }

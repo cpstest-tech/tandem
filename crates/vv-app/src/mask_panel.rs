@@ -77,6 +77,15 @@ pub(crate) struct MaskSectionResponse {
     pub(crate) draw: bool,
 }
 
+fn mask_preset_label(preset: vv_core::MaskPreset) -> std::borrow::Cow<'static, str> {
+    match preset {
+        vv_core::MaskPreset::Split => t!("props.mask_split"),
+        vv_core::MaskPreset::Filmstrip => t!("props.mask_filmstrip"),
+        vv_core::MaskPreset::Star => t!("props.mask_star"),
+        vv_core::MaskPreset::Heart => t!("props.mask_heart"),
+    }
+}
+
 pub(crate) fn masks_section(
     ui: &mut egui::Ui,
     masks: &[ClipMask],
@@ -104,6 +113,15 @@ pub(crate) fn masks_section(
                         response.draw = true;
                     }
                     new.push(mask);
+                    response.focus = Some(Some(new.len() - 1));
+                }
+            }
+        });
+        ui.horizontal_wrapped(|ui| {
+            ui.label(t!("props.mask_shapes"));
+            for preset in vv_core::MaskPreset::ALL {
+                if ui.small_button(mask_preset_label(preset)).clicked() {
+                    new.push(ClipMask::preset(preset, layer_size));
                     response.focus = Some(Some(new.len() - 1));
                 }
             }

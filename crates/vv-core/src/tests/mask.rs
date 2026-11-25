@@ -74,3 +74,40 @@ fn paths_interpolate_point_by_point_only_when_they_match() {
         "different vertex counts hold"
     );
 }
+
+fn inside(polygon: &[[f32; 2]], [x, y]: [f32; 2]) -> bool {
+    let mut odd = false;
+    for i in 0..polygon.len() {
+        let [x0, y0] = polygon[i];
+        let [x1, y1] = polygon[(i + 1) % polygon.len()];
+        if (y0 > y) != (y1 > y) && x < x0 + (y - y0) / (y1 - y0) * (x1 - x0) {
+            odd = !odd;
+        }
+    }
+    odd
+}
+
+#[test]
+fn the_star_and_heart_presets_are_closed_paths_around_the_centre() {
+    for preset in [MaskPreset::Star, MaskPreset::Heart] {
+        let mask = ClipMask::preset(preset, (1920, 1080));
+        assert!(mask.is_active());
+        let value = mask.value_at(0);
+        assert!(inside(&value.polygon, [0.0, 0.0]), "{preset:?}");
+        assert!(!inside(&value.polygon, [900.0, 0.0]), "{preset:?}");
+    }
+    let heart = ClipMask::preset(MaskPreset::Heart, (1920, 1080)).value_at(0);
+    assert!(
+        !inside(&heart.polygon, [0.0, 0.3 * 1080.0 * 0.62]),
+        "the notch between the lobes"
+    );
+}
+
+#[test]
+fn the_split_preset_covers_the_upper_half() {
+    let split = ClipMask::preset(MaskPreset::Split, (1920, 1080)).value_at(0);
+    assert_eq!(split.shape, MaskShape::Rectangle);
+    let bottom = split.center[1] - split.size[1] / 2.0;
+    assert!(bottom.abs() < 1e-3);
+    assert!(split.size[0] > 1920.0 * 2.0);
+}

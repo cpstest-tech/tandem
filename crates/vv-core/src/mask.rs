@@ -37,6 +37,21 @@ impl MaskMode {
     pub const ALL: [Self; 3] = [Self::Add, Self::Subtract, Self::Intersect];
 }
 
+/// Ready-made masks built from the basic shapes.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MaskPreset {
+    /// Everything on one side of a line through the centre.
+    Split,
+    /// A horizontal band across the clip.
+    Filmstrip,
+    Star,
+    Heart,
+}
+
+impl MaskPreset {
+    pub const ALL: [Self; 4] = [Self::Split, Self::Filmstrip, Self::Star, Self::Heart];
+}
+
 /// An animatable scalar of a mask.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum MaskParam {
@@ -235,6 +250,58 @@ impl ClipMask {
                 .map(|p| Keyframed::constant(default(*p)))
                 .collect(),
             path: Keyframed::constant(path),
+        }
+    }
+
+    /// `preset` sized for a layer of `layer_size` timeline pixels.
+    pub fn preset(preset: MaskPreset, layer_size: (u32, u32)) -> Self {
+        let (w, h) = (layer_size.0 as f32, layer_size.1 as f32);
+        match preset {
+            MaskPreset::Split | MaskPreset::Filmstrip => {
+                let mut mask = Self::new(MaskShape::Rectangle, layer_size);
+                // Wide enough that the edges stay out of the frame when rotated.
+                let span = 4.0 * w.max(h);
+                let (height, y) = match preset {
+                    MaskPreset::Split => (span, span / 2.0),
+                    _ => (h / 3.0, 0.0),
+                };
+                *mask.track_mut(MaskParam::Width) = Keyframed::constant(span);
+                *mask.track_mut(MaskParam::Height) = Keyframed::constant(height);
+                *mask.track_mut(MaskParam::CenterY) = Keyframed::constant(y);
+                mask
+            }
+            MaskPreset::Star => {
+                let mut mask = Self::new(MaskShape::Path, layer_size);
+                let outer = 0.3 * w.min(h);
+                let inner = outer * 0.4;
+                let points = (0..10)
+                    .map(|i| {
+                        let r = if i % 2 == 0 { outer } else { inner };
+                        let a = std::f32::consts::FRAC_PI_2 + i as f32 * std::f32::consts::PI / 5.0;
+                        PathPoint::corner([r * a.cos(), r * a.sin()])
+                    })
+                    .collect();
+                mask.path = Keyframed::constant(MaskPath { points });
+                mask
+            }
+            MaskPreset::Heart => {
+                let mut mask = Self::new(MaskShape::Path, layer_size);
+                let s = 0.3 * w.min(h);
+                let p = |x: f32, y: f32, ix: f32, iy: f32, ox: f32, oy: f32| PathPoint {
+                    point: [x * s, y * s],
+                    in_handle: [ix * s, iy * s],
+                    out_handle: [ox * s, oy * s],
+                };
+                // Y upwards: the notch at the top, the point at the bottom.
+                let points = vec![
+                    p(0.0, 0.55, -0.15, 0.35, 0.15, 0.35),
+                    p(0.95, 0.45, 0.0, 0.45, 0.0, -0.45),
+                    p(0.0, -0.95, 0.55, 0.45, -0.55, 0.45),
+                    p(-0.95, 0.45, 0.0, -0.45, 0.0, 0.45),
+                ];
+                mask.path = Keyframed::constant(MaskPath { points });
+                mask
+            }
         }
     }
 
