@@ -7129,6 +7129,8 @@ fn clip_label_and_color(
             let mut label = media_labels(*media_id);
             if clip.freeze.is_some() {
                 label = format!("{label} ({})", t!("timeline.freeze_frame"));
+            } else if clip.active_curve().is_some() {
+                label = format!("{label} ({})", t!("props.speed_curve"));
             } else if !clip.speed().is_one() {
                 label = format!("{label} ({})", format_speed(clip.speed()));
             }

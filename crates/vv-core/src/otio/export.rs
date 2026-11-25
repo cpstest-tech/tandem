@@ -234,6 +234,7 @@ fn clip_to_otio(
                 "speed": clip.speed(),
                 "pitch_correction": clip.pitch_correction,
                 "reversed": clip.reversed,
+                "speed_curve": clip.speed_curve,
                 "freeze": clip.freeze.map(|frame| json!({
                     "frame": frame,
                     "source_offset": clip.source_offset,

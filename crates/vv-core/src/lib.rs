@@ -18,6 +18,7 @@ pub mod otio;
 pub mod persistence;
 pub mod pool;
 pub mod reframe;
+pub mod speed_curve;
 mod stable_hash;
 pub mod style_pack;
 pub mod text_anim;
@@ -46,6 +47,7 @@ pub use command::{
 pub use easing::Easing;
 pub use grade::*;
 pub use mask::*;
+pub use speed_curve::{CurvePreset, SetClipSpeedCurve, SpeedCurve};
 pub mod fx;
 pub use model::*;
 pub use otio::{

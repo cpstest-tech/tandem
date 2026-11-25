@@ -152,11 +152,7 @@ fn input_clips_at(
     let fps = timeline.fps.as_f64().max(1e-9);
     let mut clips = Vec::new();
     for (track_index, track) in timeline.audible_tracks() {
-        for clip in track
-            .clips
-            .iter()
-            .filter(|c| !c.disabled && c.freeze.is_none())
-        {
+        for clip in track.clips.iter().filter(|c| !c.disabled && !c.is_silent()) {
             let ClipSource::Media(media_id) = &clip.source else {
                 continue;
             };

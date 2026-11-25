@@ -753,9 +753,45 @@ props.speed_media_only:
   en: "Speed applies to media clips only."
   it: "La velocità vale solo per le clip multimediali."
 
-props.speed_curve_hint:
-  en: "Speed ramping with a Bézier graph"
-  it: "Speed ramping con grafico di Bézier"
+props.curve_none:
+  en: "None"
+  it: "Nessuna"
+
+props.curve_ramp_up:
+  en: "Ramp up"
+  it: "Accelera"
+
+props.curve_ramp_down:
+  en: "Ramp down"
+  it: "Rallenta"
+
+props.curve_slow_middle:
+  en: "Slow middle"
+  it: "Lento al centro"
+
+props.curve_fast_middle:
+  en: "Fast middle"
+  it: "Veloce al centro"
+
+props.curve_flash_in:
+  en: "Flash in"
+  it: "Entrata rapida"
+
+props.curve_flash_out:
+  en: "Flash out"
+  it: "Uscita rapida"
+
+props.curve_pulse:
+  en: "Pulse"
+  it: "Pulsazione"
+
+props.curve_graph_hint:
+  en: "Drag the points to change the speed; double-click to add or remove one"
+  it: "Trascina i punti per cambiare la velocità; doppio clic per aggiungerne o toglierne uno"
+
+props.curve_silent:
+  en: "A clip with a speed curve plays no audio."
+  it: "Un clip con curva di velocità non riproduce l'audio."
 
 props.stabilize:
   en: "Stabilize"

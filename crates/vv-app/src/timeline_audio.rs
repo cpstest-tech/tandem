@@ -805,7 +805,7 @@ fn clip_audio_failures<'a>(
         // Only the clips the mixer reads from these streams.
         let reads_stream = |clip: &&vv_core::Clip| {
             !clip.disabled
-                && clip.freeze.is_none()
+                && !clip.is_silent()
                 && !clip.reversed
                 && !(clip.pitch_correction && !clip.speed().is_one())
         };

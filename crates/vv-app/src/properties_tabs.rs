@@ -443,26 +443,6 @@ pub(crate) fn adjust_placeholders(ui: &mut egui::Ui) {
     placeholder_section(ui, &t!("props.curves_rgb"), &[t!("props.contrast")]);
 }
 
-pub(crate) fn speed_curve_placeholder(ui: &mut egui::Ui) {
-    ui.add_space(8.0);
-    ui.add_enabled_ui(false, |ui| {
-        let (rect, response) = ui.allocate_exact_size(
-            egui::vec2(ui.available_width(), 120.0),
-            egui::Sense::hover(),
-        );
-        ui.painter()
-            .rect_filled(rect, theme::RADIUS_CONTROL, theme::BG_INSET);
-        ui.painter().text(
-            rect.center(),
-            egui::Align2::CENTER_CENTER,
-            t!("props.speed_curve_hint"),
-            egui::FontId::proportional(theme::FONT_SMALL),
-            theme::TEXT_DISABLED,
-        );
-        soon(response);
-    });
-}
-
 #[derive(Clone, Copy)]
 enum Align {
     Left,
@@ -735,7 +715,7 @@ impl VenturiApp {
             ],
         );
         if kind {
-            speed_curve_placeholder(ui);
+            self.show_speed_curve(ui, targets);
             return;
         }
         let Some(timeline_id) = self.timeline_id else {

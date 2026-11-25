@@ -1077,11 +1077,7 @@ fn collect_clips(
     let mut clips = Vec::new();
     let mut cyclic = false;
     for (track_index, track) in timeline.audible_tracks() {
-        for clip in track
-            .clips
-            .iter()
-            .filter(|c| !c.disabled && c.freeze.is_none())
-        {
+        for clip in track.clips.iter().filter(|c| !c.disabled && !c.is_silent()) {
             if let Some(Measured {
                 channel: MixerChannel::Track(measured_track),
                 clip: measured_clip,
@@ -1836,7 +1832,7 @@ fn audio_end(project: &Project, timeline: &Timeline, sample_rate: u32, depth: u3
     timeline
         .audible_tracks()
         .flat_map(|(_, track)| track.clips.iter())
-        .filter(|c| !c.disabled && c.freeze.is_none())
+        .filter(|c| !c.disabled && !c.is_silent())
         .filter_map(|clip| {
             let ClipSource::Media(media_id) = &clip.source else {
                 return None;

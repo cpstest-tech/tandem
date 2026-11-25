@@ -2116,6 +2116,9 @@ pub struct Clip {
     /// Keyframes keep running forward in timeline time.
     #[serde(default)]
     pub reversed: bool,
+    /// Speed ramp over the clip's length; see `crate::speed_curve`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub speed_curve: Option<crate::speed_curve::SpeedCurve>,
     /// Excluded from compositing and mixing, but stays on the timeline.
     #[serde(default)]
     pub disabled: bool,
@@ -2171,6 +2174,7 @@ impl Clip {
             pitch_correction: pitch_correction_default(),
             freeze: None,
             reversed: false,
+            speed_curve: None,
             disabled: false,
             fade_in: 0,
             fade_out: 0,
@@ -2354,12 +2358,33 @@ impl Clip {
         if let Some(frozen) = self.freeze {
             return frozen;
         }
-        let forward = self.source_frame_at(timeline_frame);
+        let mut forward = self.source_frame_at(timeline_frame);
+        if let Some(curve) = self.active_curve() {
+            // Sampled at the middle of the timeline frame.
+            let x = ((timeline_frame - self.timeline_start) as f64 + 0.5)
+                / self.timeline_len.max(1) as f64;
+            let p = crate::speed_curve::progress(&curve.points, x);
+            let (start, end) = (self.source_in(), self.source_out());
+            forward =
+                (start + (p * (end - start) as f64).floor() as FrameIdx).clamp(start, end - 1);
+        }
         if self.reversed {
             self.source_in() + self.source_out() - 1 - forward
         } else {
             forward
         }
+    }
+
+    /// The speed curve, while the clip still shows the range it was laid on.
+    pub fn active_curve(&self) -> Option<&crate::speed_curve::SpeedCurve> {
+        self.speed_curve
+            .as_ref()
+            .filter(|c| c.range == (self.source_in(), self.source_out()))
+    }
+
+    /// Frozen or speed-ramped: the mixer plays nothing for it.
+    pub fn is_silent(&self) -> bool {
+        self.freeze.is_some() || self.active_curve().is_some()
     }
 
     /// Clears the freeze and shortens the clip back within a media of

@@ -631,6 +631,7 @@ impl Importer<'_> {
         clip.pitch_correction = venturi["pitch_correction"].as_bool().unwrap_or(true);
         clip.disabled = disabled;
         clip.reversed = venturi["reversed"].as_bool().unwrap_or(false);
+        clip.speed_curve = serde_json::from_value(venturi["speed_curve"].clone()).unwrap_or(None);
         if let ClipSource::Media(_) = clip.source {
             let saved = &venturi["freeze"];
             match saved["frame"].as_i64() {

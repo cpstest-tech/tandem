@@ -83,6 +83,7 @@ pub enum CommandLabel {
     PasteAttributes,
     ApplyPreset,
     ClipSpeed,
+    SpeedCurve,
     FreezeFrame,
     ReverseClips,
     RemoveSilences,
@@ -1185,6 +1186,7 @@ impl Command for SetClipSpeed {
                 };
                 let (old_len, old_end) = (clip.timeline_len, clip.timeline_end());
                 clip.pitch_correction = self.pitch_correction;
+                clip.speed_curve = None;
                 clip.unfreeze(media.meta.duration_frames);
                 clip.set_speed(self.speed, Rational::conform_rate(tl.fps, media.meta.fps));
                 let wanted_len = match self.fit {
