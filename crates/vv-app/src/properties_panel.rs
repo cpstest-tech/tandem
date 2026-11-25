@@ -1956,7 +1956,7 @@ impl VenturiApp {
                                                 self.save_text_template(before.clone());
                                             }
                                             ui.add_space(6.0);
-                                            properties_tabs::text_placeholders(ui);
+                                            self.show_bubble_section(ui, targets, &mut pending_effects);
                                     }
                                     match self.properties_tab {
                                         PropertiesTab::Video

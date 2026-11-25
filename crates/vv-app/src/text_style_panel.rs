@@ -447,6 +447,17 @@ fn extrude_section(ui: &mut egui::Ui, title: &mut TitleParams) -> bool {
     changed
 }
 
+pub(crate) fn shape_label(shape: BackgroundShape) -> std::borrow::Cow<'static, str> {
+    match shape {
+        BackgroundShape::RoundedRect => t!("style.shape_rect"),
+        BackgroundShape::Pill => t!("style.shape_pill"),
+        BackgroundShape::Ellipse => t!("style.shape_ellipse"),
+        BackgroundShape::Speech => t!("style.shape_speech"),
+        BackgroundShape::Thought => t!("style.shape_thought"),
+        BackgroundShape::Burst => t!("style.shape_burst"),
+    }
+}
+
 /// Shape, gradient, padding and rotation of the background, after the rows
 /// the section already had.
 pub(crate) fn background_extras(ui: &mut egui::Ui, title: &mut TitleParams) -> bool {
@@ -462,6 +473,26 @@ pub(crate) fn background_extras(ui: &mut egui::Ui, title: &mut TitleParams) -> b
         (
             BackgroundShape::Pill,
             t!("style.shape_pill").to_string(),
+            true,
+        ),
+        (
+            BackgroundShape::Ellipse,
+            t!("style.shape_ellipse").to_string(),
+            true,
+        ),
+        (
+            BackgroundShape::Speech,
+            t!("style.shape_speech").to_string(),
+            true,
+        ),
+        (
+            BackgroundShape::Thought,
+            t!("style.shape_thought").to_string(),
+            true,
+        ),
+        (
+            BackgroundShape::Burst,
+            t!("style.shape_burst").to_string(),
             true,
         ),
     ];
@@ -530,4 +561,80 @@ pub(crate) fn style_sections(
     changed |= glow_section(ui, title);
     changed |= extrude_section(ui, title);
     changed
+}
+
+impl crate::VenturiApp {
+    /// «Bubble»: one click puts the title in a speech balloon, white with a
+    /// black outline; the Background section tunes it afterwards.
+    pub(crate) fn show_bubble_section(
+        &mut self,
+        ui: &mut egui::Ui,
+        targets: &[crate::PanelTarget],
+        pending: &mut Vec<crate::properties_panel::BoxedCommand>,
+    ) {
+        let Some(timeline_id) = self.timeline_id else {
+            return;
+        };
+        let (open, _) =
+            crate::properties_panel::section_header(ui, &t!("props.bubble_effects"), false);
+        if !open {
+            return;
+        }
+        let tl = &self.session.project.timelines[timeline_id];
+        let titles: Vec<(usize, vv_core::ClipId, TitleParams)> = targets
+            .iter()
+            .filter(|t| t.is_text)
+            .filter_map(|t| {
+                let title = tl.clip(t.track_index, t.clip_id)?.effects.title.clone()?;
+                Some((t.track_index, t.clip_id, title))
+            })
+            .collect();
+        let current = titles
+            .first()
+            .map(|(_, _, t)| t.background.enabled.then_some(t.background.shape));
+        let mut chosen: Option<Option<BackgroundShape>> = None;
+        ui.horizontal_wrapped(|ui| {
+            if ui
+                .selectable_label(current == Some(None), t!("props.curve_none"))
+                .clicked()
+            {
+                chosen = Some(None);
+            }
+            for shape in BackgroundShape::BUBBLES {
+                if ui
+                    .selectable_label(current == Some(Some(shape)), shape_label(shape))
+                    .clicked()
+                {
+                    chosen = Some(Some(shape));
+                }
+            }
+        });
+        let Some(choice) = chosen else {
+            return;
+        };
+        for (track, clip, mut title) in titles {
+            match choice {
+                None => title.background.enabled = false,
+                Some(shape) => {
+                    let bg = &mut title.background;
+                    if !bg.enabled || !BackgroundShape::BUBBLES.contains(&bg.shape) {
+                        bg.color = Rgba::WHITE;
+                        bg.outline_color = Rgba::BLACK;
+                        bg.outline_width = 4.0;
+                        bg.opacity = 100.0;
+                        bg.padding = bg.padding.max(0.6);
+                        title.color = Rgba::BLACK;
+                    }
+                    title.background.enabled = true;
+                    title.background.shape = shape;
+                }
+            }
+            pending.push(Box::new(vv_core::set_clip_title(
+                timeline_id,
+                track,
+                clip,
+                title,
+            )));
+        }
+    }
 }

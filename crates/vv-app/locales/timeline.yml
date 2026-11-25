@@ -336,10 +336,6 @@ timeline.delete:
   en: "Delete"
   it: "Elimina"
 
-common.coming_soon:
-  en: "Coming soon"
-  it: "Presto disponibile"
-
 timeline_bar.mode_select:
   en: "Select"
   it: "Seleziona"

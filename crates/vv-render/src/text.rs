@@ -663,10 +663,12 @@ pub(crate) fn background_layers(
         );
         let radius = match bg.shape {
             BackgroundShape::Pill => box_w.min(box_h) / 2.0,
-            BackgroundShape::RoundedRect => bg.corner_radius.clamp(0.0, 0.5) * box_w.min(box_h),
+            BackgroundShape::Speech => 0.3 * box_w.min(box_h),
+            _ => bg.corner_radius.clamp(0.0, 0.5) * box_w.min(box_h),
         };
         let outline = scale_px(bg.outline_width).max(0.0);
-        let (origin, fill, ring) = rounded_rect_masks(
+        let (origin, fill, ring) = shape_masks(
+            bg.shape,
             width,
             height,
             center,
@@ -827,7 +829,84 @@ pub(crate) fn style_layers(
 /// Top-left in the frame, fill and (if `outline > 0`) inner border of a
 /// rounded rectangle, with the edges antialiased from the signed distance.
 /// The masks cover only the rectangle's box, cut to the frame.
-fn rounded_rect_masks(
+/// Signed distance (pixels, negative inside) from `shape` of half size
+/// `half`, at `(x, y)` in its own unrotated frame, y down.
+fn shape_distance(
+    shape: BackgroundShape,
+    (x, y): (f32, f32),
+    half: (f32, f32),
+    radius: f32,
+) -> f32 {
+    let rounded = |x: f32, y: f32, half: (f32, f32), radius: f32| {
+        let px = x.abs() - (half.0 - radius);
+        let py = y.abs() - (half.1 - radius);
+        if px > 0.0 && py > 0.0 {
+            (px * px + py * py).sqrt() - radius
+        } else {
+            px.max(py) - radius
+        }
+    };
+    let ellipse = |x: f32, y: f32, half: (f32, f32)| {
+        let k = (x / half.0.max(1e-3)).hypot(y / half.1.max(1e-3));
+        (k - 1.0) * half.0.min(half.1)
+    };
+    let circle = |x: f32, y: f32, c: (f32, f32), r: f32| (x - c.0).hypot(y - c.1) - r;
+    match shape {
+        BackgroundShape::RoundedRect | BackgroundShape::Pill => rounded(x, y, half, radius),
+        BackgroundShape::Ellipse => ellipse(x, y, half),
+        BackgroundShape::Speech => {
+            let body = rounded(x, y, half, radius);
+            // Tail: a triangle from the bottom edge down to the left.
+            let a = (-0.45 * half.0, half.1 - radius.min(half.1 * 0.5));
+            let b = (-0.05 * half.0, half.1 - radius.min(half.1 * 0.5));
+            let c = (-0.7 * half.0, half.1 * 1.75);
+            body.min(triangle_distance((x, y), a, b, c))
+        }
+        BackgroundShape::Thought => {
+            let body = ellipse(x, y, half);
+            let small = circle(x, y, (-0.55 * half.0, 1.3 * half.1), 0.22 * half.1);
+            let tiny = circle(x, y, (-0.8 * half.0, 1.75 * half.1), 0.12 * half.1);
+            body.min(small).min(tiny)
+        }
+        BackgroundShape::Burst => {
+            let (nx, ny) = (x / half.0.max(1e-3), y / half.1.max(1e-3));
+            let angle = ny.atan2(nx);
+            let spikes = 14.0;
+            let wave = ((angle * spikes / std::f32::consts::TAU).fract() - 0.5).abs() * 2.0;
+            let reach = 1.0 + 0.3 * wave;
+            (nx.hypot(ny) - reach) * half.0.min(half.1) * 0.8
+        }
+    }
+}
+
+/// Signed distance from triangle `a b c` (iq's sdTriangle).
+fn triangle_distance(p: (f32, f32), a: (f32, f32), b: (f32, f32), c: (f32, f32)) -> f32 {
+    let sub = |u: (f32, f32), v: (f32, f32)| (u.0 - v.0, u.1 - v.1);
+    let dot = |u: (f32, f32), v: (f32, f32)| u.0 * v.0 + u.1 * v.1;
+    let edges = [(a, b), (b, c), (c, a)];
+    let mut d = f32::MAX;
+    let mut sign = 0.0f32;
+    let mut signs = [0.0f32; 3];
+    for (i, (p0, p1)) in edges.iter().enumerate() {
+        let e = sub(*p1, *p0);
+        let w = sub(p, *p0);
+        let t = (dot(w, e) / dot(e, e).max(1e-6)).clamp(0.0, 1.0);
+        let q = (w.0 - e.0 * t, w.1 - e.1 * t);
+        d = d.min(dot(q, q));
+        signs[i] = e.0 * w.1 - e.1 * w.0;
+    }
+    if signs.iter().all(|s| *s >= 0.0) || signs.iter().all(|s| *s <= 0.0) {
+        sign = -1.0;
+    }
+    if sign == 0.0 {
+        sign = 1.0;
+    }
+    sign * d.sqrt()
+}
+
+#[allow(clippy::too_many_arguments)]
+fn shape_masks(
+    shape: BackgroundShape,
     width: u32,
     height: u32,
     center: (f32, f32),
@@ -837,10 +916,11 @@ fn rounded_rect_masks(
     rotation: f32,
 ) -> ((i32, i32), TextMask, Option<TextMask>) {
     let half = (size.0 / 2.0, size.1 / 2.0);
+    let grown = (half.0 * shape.overhang(), half.1 * shape.overhang());
     let reach = if rotation == 0.0 {
-        half
+        grown
     } else {
-        let r = half.0.hypot(half.1);
+        let r = grown.0.hypot(grown.1);
         (r, r)
     };
     let (sin, cos) = (-rotation).sin_cos();
@@ -857,13 +937,8 @@ fn rounded_rect_masks(
     for y in y_range {
         for x in x_range.clone() {
             let (dx, dy) = (x as f32 + 0.5 - center.0, y as f32 + 0.5 - center.1);
-            let px = (dx * cos - dy * sin).abs() - (half.0 - radius);
-            let py = (dx * sin + dy * cos).abs() - (half.1 - radius);
-            let d = if px > 0.0 && py > 0.0 {
-                (px * px + py * py).sqrt() - radius
-            } else {
-                px.max(py) - radius
-            };
+            let local = (dx * cos - dy * sin, dx * sin + dy * cos);
+            let d = shape_distance(shape, local, half, radius);
             let i = ((y - oy) * box_w + x - ox) as usize;
             let inside = coverage(d);
             fill[i] = (inside * 255.0).round() as u8;

@@ -248,4 +248,26 @@ pub enum BackgroundShape {
     #[default]
     RoundedRect,
     Pill,
+    Ellipse,
+    /// Rounded box with a tail at the bottom left.
+    Speech,
+    /// Cloud-like ellipse with two bubbles trailing down to the left.
+    Thought,
+    /// A spiky comic-book shout.
+    Burst,
+}
+
+impl BackgroundShape {
+    /// The speech-bubble shapes of the text tab's quick picks.
+    pub const BUBBLES: [Self; 4] = [Self::Speech, Self::Thought, Self::Burst, Self::Ellipse];
+
+    /// Whether parts of it reach outside its box (tail, bubbles, spikes).
+    pub fn overhang(self) -> f32 {
+        match self {
+            Self::RoundedRect | Self::Pill => 1.0,
+            Self::Ellipse => 1.0,
+            Self::Speech | Self::Thought => 2.0,
+            Self::Burst => 1.3,
+        }
+    }
 }

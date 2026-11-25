@@ -1,5 +1,4 @@
-//! CapCut-style tabs of the properties panel, and the controls the engine
-//! does not support yet (visible but disabled, «Presto disponibile»).
+//! CapCut-style tabs of the properties panel.
 
 use super::*;
 use crate::properties_panel::{
@@ -147,38 +146,7 @@ pub(crate) fn segmented<T: Copy + PartialEq>(
     items[index].0
 }
 
-fn soon(response: egui::Response) {
-    response.on_disabled_hover_text(t!("common.coming_soon"));
-}
-
-/// Disabled slider row for a control the engine lacks.
-pub(crate) fn placeholder_row(ui: &mut egui::Ui, label: &str) {
-    ui.horizontal(|ui| {
-        ui.add_sized(
-            [PLACEHOLDER_LABEL_WIDTH, 18.0],
-            egui::Label::new(egui::RichText::new(label).color(theme::TEXT_DISABLED)).truncate(),
-        );
-        let mut value = 0.0_f32;
-        ui.spacing_mut().slider_width = (ui.available_width() - 70.0).clamp(60.0, 240.0);
-        soon(ui.add_enabled(
-            false,
-            egui::Slider::new(&mut value, -100.0..=100.0).show_value(true),
-        ));
-    });
-}
-
 const PLACEHOLDER_LABEL_WIDTH: f32 = 120.0;
-
-/// Folding section whose controls are all [placeholder] sliders.
-pub(crate) fn placeholder_section(ui: &mut egui::Ui, title: &str, rows: &[Cow<'static, str>]) {
-    ui.add_space(6.0);
-    let (open, _) = section_header(ui, title, false);
-    if open {
-        for row in rows {
-            placeholder_row(ui, row);
-        }
-    }
-}
 
 type ChromaEdit = Box<dyn Fn(&mut vv_core::ClipFilter)>;
 
@@ -361,10 +329,6 @@ impl VenturiApp {
             }
         }
     }
-}
-
-pub(crate) fn text_placeholders(ui: &mut egui::Ui) {
-    placeholder_section(ui, &t!("props.bubble_effects"), &[t!("props.strength")]);
 }
 
 #[derive(Clone, Copy)]

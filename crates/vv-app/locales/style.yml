@@ -128,6 +128,22 @@ style.shape_pill:
   en: "Pill"
   it: "Pillola"
 
+style.shape_ellipse:
+  en: "Ellipse"
+  it: "Ellisse"
+
+style.shape_speech:
+  en: "Speech bubble"
+  it: "Fumetto"
+
+style.shape_thought:
+  en: "Thought bubble"
+  it: "Nuvoletta pensiero"
+
+style.shape_burst:
+  en: "Burst"
+  it: "Esplosione"
+
 style.padding:
   en: "Padding"
   it: "Margine"

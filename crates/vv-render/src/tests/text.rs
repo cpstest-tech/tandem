@@ -626,3 +626,45 @@ mod styles {
         assert!(width(900) > width(300), "{} vs {}", width(900), width(300));
     }
 }
+
+#[test]
+fn the_bubble_shapes_reach_past_their_box_where_they_should() {
+    let half = (100.0, 50.0);
+    for shape in [
+        BackgroundShape::RoundedRect,
+        BackgroundShape::Ellipse,
+        BackgroundShape::Speech,
+        BackgroundShape::Thought,
+        BackgroundShape::Burst,
+    ] {
+        assert!(
+            shape_distance(shape, (0.0, 0.0), half, 10.0) < 0.0,
+            "{shape:?} centre"
+        );
+        assert!(
+            shape_distance(shape, (0.0, -200.0), half, 10.0) > 0.0,
+            "{shape:?} far above"
+        );
+    }
+    // The tail and the bubbles hang below the box, on the left.
+    let below_left = (-60.0, 70.0);
+    assert!(shape_distance(BackgroundShape::Speech, below_left, half, 10.0) < 0.0);
+    assert!(shape_distance(BackgroundShape::RoundedRect, below_left, half, 10.0) > 0.0);
+    let bubble = (-55.0, 65.0);
+    assert!(shape_distance(BackgroundShape::Thought, bubble, half, 10.0) < 0.0);
+    // The burst's spikes reach out where the ellipse does not.
+    let spiky = (0..360)
+        .map(|deg| {
+            let a = (deg as f32).to_radians();
+            (115.0 * a.cos(), 57.5 * a.sin())
+        })
+        .any(|p| shape_distance(BackgroundShape::Burst, p, half, 10.0) < 0.0);
+    assert!(spiky);
+}
+
+#[test]
+fn a_triangle_is_negative_inside_and_positive_outside() {
+    let (a, b, c) = ((0.0, 0.0), (10.0, 0.0), (0.0, 10.0));
+    assert!(triangle_distance((2.0, 2.0), a, b, c) < 0.0);
+    assert!((triangle_distance((-3.0, 0.0), a, b, c) - 3.0).abs() < 1e-4);
+}
