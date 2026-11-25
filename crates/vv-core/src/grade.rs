@@ -28,10 +28,66 @@ pub enum GradeParam {
     LowRange,
     /// Luma where the midtones give way to the highlights.
     HighRange,
+    // The "Adjust" controls, applied before the wheels.
+    Temperature,
+    Tint,
+    Brightness,
+    Contrast,
+    Highlights,
+    Shadows,
+    Vignette,
+    HslRedHue,
+    HslRedSat,
+    HslRedLum,
+    HslOrangeHue,
+    HslOrangeSat,
+    HslOrangeLum,
+    HslYellowHue,
+    HslYellowSat,
+    HslYellowLum,
+    HslGreenHue,
+    HslGreenSat,
+    HslGreenLum,
+    HslCyanHue,
+    HslCyanSat,
+    HslCyanLum,
+    HslBlueHue,
+    HslBlueSat,
+    HslBlueLum,
+    HslPurpleHue,
+    HslPurpleSat,
+    HslPurpleLum,
+    HslMagentaHue,
+    HslMagentaSat,
+    HslMagentaLum,
+    CurveMaster0,
+    CurveMaster1,
+    CurveMaster2,
+    CurveMaster3,
+    CurveMaster4,
+    CurveRed0,
+    CurveRed1,
+    CurveRed2,
+    CurveRed3,
+    CurveRed4,
+    CurveGreen0,
+    CurveGreen1,
+    CurveGreen2,
+    CurveGreen3,
+    CurveGreen4,
+    CurveBlue0,
+    CurveBlue1,
+    CurveBlue2,
+    CurveBlue3,
+    CurveBlue4,
+    /// How much of the clip's LUT shows, 0..1.
+    LutAmount,
+    /// Unsharp mask on the luma of video and pictures, 0..1.
+    Sharpen,
 }
 
 impl GradeParam {
-    pub const COUNT: usize = 18;
+    pub const COUNT: usize = 71;
     pub const ALL: [Self; Self::COUNT] = [
         Self::ShadowsX,
         Self::ShadowsY,
@@ -51,6 +107,59 @@ impl GradeParam {
         Self::Saturation,
         Self::LowRange,
         Self::HighRange,
+        Self::Temperature,
+        Self::Tint,
+        Self::Brightness,
+        Self::Contrast,
+        Self::Highlights,
+        Self::Shadows,
+        Self::Vignette,
+        Self::HslRedHue,
+        Self::HslRedSat,
+        Self::HslRedLum,
+        Self::HslOrangeHue,
+        Self::HslOrangeSat,
+        Self::HslOrangeLum,
+        Self::HslYellowHue,
+        Self::HslYellowSat,
+        Self::HslYellowLum,
+        Self::HslGreenHue,
+        Self::HslGreenSat,
+        Self::HslGreenLum,
+        Self::HslCyanHue,
+        Self::HslCyanSat,
+        Self::HslCyanLum,
+        Self::HslBlueHue,
+        Self::HslBlueSat,
+        Self::HslBlueLum,
+        Self::HslPurpleHue,
+        Self::HslPurpleSat,
+        Self::HslPurpleLum,
+        Self::HslMagentaHue,
+        Self::HslMagentaSat,
+        Self::HslMagentaLum,
+        Self::CurveMaster0,
+        Self::CurveMaster1,
+        Self::CurveMaster2,
+        Self::CurveMaster3,
+        Self::CurveMaster4,
+        Self::CurveRed0,
+        Self::CurveRed1,
+        Self::CurveRed2,
+        Self::CurveRed3,
+        Self::CurveRed4,
+        Self::CurveGreen0,
+        Self::CurveGreen1,
+        Self::CurveGreen2,
+        Self::CurveGreen3,
+        Self::CurveGreen4,
+        Self::CurveBlue0,
+        Self::CurveBlue1,
+        Self::CurveBlue2,
+        Self::CurveBlue3,
+        Self::CurveBlue4,
+        Self::LutAmount,
+        Self::Sharpen,
     ];
 
     /// Position in `GradeTracks::params` and `GradeValue`: the declaration
@@ -65,6 +174,27 @@ impl GradeParam {
             Self::ShadowsSat | Self::MidtonesSat | Self::HighlightsSat | Self::Saturation => 1.0,
             Self::LowRange => 1.0 / 3.0,
             Self::HighRange => 2.0 / 3.0,
+            Self::CurveMaster0 => 0.0,
+            Self::CurveMaster1 => 0.25,
+            Self::CurveMaster2 => 0.5,
+            Self::CurveMaster3 => 0.75,
+            Self::CurveMaster4 => 1.0,
+            Self::CurveRed0 => 0.0,
+            Self::CurveRed1 => 0.25,
+            Self::CurveRed2 => 0.5,
+            Self::CurveRed3 => 0.75,
+            Self::CurveRed4 => 1.0,
+            Self::CurveGreen0 => 0.0,
+            Self::CurveGreen1 => 0.25,
+            Self::CurveGreen2 => 0.5,
+            Self::CurveGreen3 => 0.75,
+            Self::CurveGreen4 => 1.0,
+            Self::CurveBlue0 => 0.0,
+            Self::CurveBlue1 => 0.25,
+            Self::CurveBlue2 => 0.5,
+            Self::CurveBlue3 => 0.75,
+            Self::CurveBlue4 => 1.0,
+            Self::LutAmount => 1.0,
             _ => 0.0,
         }
     }
@@ -77,6 +207,28 @@ impl GradeParam {
                 0.0..=2.0
             }
             Self::LowRange | Self::HighRange => 0.0..=1.0,
+            Self::CurveMaster0
+            | Self::CurveMaster1
+            | Self::CurveMaster2
+            | Self::CurveMaster3
+            | Self::CurveMaster4
+            | Self::CurveRed0
+            | Self::CurveRed1
+            | Self::CurveRed2
+            | Self::CurveRed3
+            | Self::CurveRed4
+            | Self::CurveGreen0
+            | Self::CurveGreen1
+            | Self::CurveGreen2
+            | Self::CurveGreen3
+            | Self::CurveGreen4
+            | Self::CurveBlue0
+            | Self::CurveBlue1
+            | Self::CurveBlue2
+            | Self::CurveBlue3
+            | Self::CurveBlue4
+            | Self::LutAmount
+            | Self::Sharpen => 0.0..=1.0,
             _ => -1.0..=1.0,
         }
     }
@@ -172,6 +324,289 @@ impl GradeValue {
     }
 }
 
+/// The eight hue bands of the HSL controls, red first.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HslBand {
+    Red,
+    Orange,
+    Yellow,
+    Green,
+    Cyan,
+    Blue,
+    Purple,
+    Magenta,
+}
+
+impl HslBand {
+    pub const ALL: [Self; 8] = [
+        Self::Red,
+        Self::Orange,
+        Self::Yellow,
+        Self::Green,
+        Self::Cyan,
+        Self::Blue,
+        Self::Purple,
+        Self::Magenta,
+    ];
+
+    /// Centre hue, in turns (0..1).
+    pub const fn hue(self) -> f32 {
+        match self {
+            Self::Red => 0.0,
+            Self::Orange => 30.0 / 360.0,
+            Self::Yellow => 60.0 / 360.0,
+            Self::Green => 120.0 / 360.0,
+            Self::Cyan => 180.0 / 360.0,
+            Self::Blue => 240.0 / 360.0,
+            Self::Purple => 270.0 / 360.0,
+            Self::Magenta => 300.0 / 360.0,
+        }
+    }
+
+    /// Hue shift, saturation and luminance of the band.
+    pub const fn params(self) -> [GradeParam; 3] {
+        match self {
+            Self::Red => [
+                GradeParam::HslRedHue,
+                GradeParam::HslRedSat,
+                GradeParam::HslRedLum,
+            ],
+            Self::Orange => [
+                GradeParam::HslOrangeHue,
+                GradeParam::HslOrangeSat,
+                GradeParam::HslOrangeLum,
+            ],
+            Self::Yellow => [
+                GradeParam::HslYellowHue,
+                GradeParam::HslYellowSat,
+                GradeParam::HslYellowLum,
+            ],
+            Self::Green => [
+                GradeParam::HslGreenHue,
+                GradeParam::HslGreenSat,
+                GradeParam::HslGreenLum,
+            ],
+            Self::Cyan => [
+                GradeParam::HslCyanHue,
+                GradeParam::HslCyanSat,
+                GradeParam::HslCyanLum,
+            ],
+            Self::Blue => [
+                GradeParam::HslBlueHue,
+                GradeParam::HslBlueSat,
+                GradeParam::HslBlueLum,
+            ],
+            Self::Purple => [
+                GradeParam::HslPurpleHue,
+                GradeParam::HslPurpleSat,
+                GradeParam::HslPurpleLum,
+            ],
+            Self::Magenta => [
+                GradeParam::HslMagentaHue,
+                GradeParam::HslMagentaSat,
+                GradeParam::HslMagentaLum,
+            ],
+        }
+    }
+}
+
+/// The curves of the "Adjust" tab: five handles each, at inputs 0, ¼, ½, ¾, 1.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CurveChannel {
+    Master,
+    Red,
+    Green,
+    Blue,
+}
+
+impl CurveChannel {
+    pub const ALL: [Self; 4] = [Self::Master, Self::Red, Self::Green, Self::Blue];
+
+    pub const fn params(self) -> [GradeParam; 5] {
+        match self {
+            Self::Master => [
+                GradeParam::CurveMaster0,
+                GradeParam::CurveMaster1,
+                GradeParam::CurveMaster2,
+                GradeParam::CurveMaster3,
+                GradeParam::CurveMaster4,
+            ],
+            Self::Red => [
+                GradeParam::CurveRed0,
+                GradeParam::CurveRed1,
+                GradeParam::CurveRed2,
+                GradeParam::CurveRed3,
+                GradeParam::CurveRed4,
+            ],
+            Self::Green => [
+                GradeParam::CurveGreen0,
+                GradeParam::CurveGreen1,
+                GradeParam::CurveGreen2,
+                GradeParam::CurveGreen3,
+                GradeParam::CurveGreen4,
+            ],
+            Self::Blue => [
+                GradeParam::CurveBlue0,
+                GradeParam::CurveBlue1,
+                GradeParam::CurveBlue2,
+                GradeParam::CurveBlue3,
+                GradeParam::CurveBlue4,
+            ],
+        }
+    }
+}
+
+/// The basic "Adjust" sliders, in the order they are shown.
+pub const BASIC_ADJUSTMENTS: [GradeParam; 8] = [
+    GradeParam::Temperature,
+    GradeParam::Tint,
+    GradeParam::Brightness,
+    GradeParam::Contrast,
+    GradeParam::Highlights,
+    GradeParam::Shadows,
+    GradeParam::Vignette,
+    GradeParam::Sharpen,
+];
+
+impl GradeValue {
+    /// Whether any "Adjust" control moved: the shader skips them otherwise.
+    pub fn adjusts(&self) -> bool {
+        GradeParam::ALL[GradeParam::Temperature.index()..]
+            .iter()
+            .any(|p| self.get(*p) != p.neutral())
+    }
+}
+
+/// Uniform Catmull-Rom through five values at 0, ¼, ½, ¾, 1. Mirrored in transform.wgsl.
+pub fn curve_at(knots: [f32; 5], x: f32) -> f32 {
+    let x = x.clamp(0.0, 1.0) * 4.0;
+    let i = (x.floor() as usize).min(3);
+    let t = x - i as f32;
+    // Linear extrapolation past the ends: straight knots give a straight line.
+    let k = |j: isize| match j {
+        -1 => 2.0 * knots[0] - knots[1],
+        5 => 2.0 * knots[4] - knots[3],
+        j => knots[j as usize],
+    };
+    let (p0, p1, p2, p3) = (
+        k(i as isize - 1),
+        k(i as isize),
+        k(i as isize + 1),
+        k(i as isize + 2),
+    );
+    let t2 = t * t;
+    let t3 = t2 * t;
+    let v = 0.5
+        * (2.0 * p1
+            + (p2 - p0) * t
+            + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2
+            + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t3);
+    v.clamp(0.0, 1.0)
+}
+
+fn rgb_to_hsv([r, g, b]: [f32; 3]) -> [f32; 3] {
+    let max = r.max(g).max(b);
+    let min = r.min(g).min(b);
+    let d = max - min;
+    let h = if d <= 1e-6 {
+        0.0
+    } else if max == r {
+        ((g - b) / d).rem_euclid(6.0) / 6.0
+    } else if max == g {
+        ((b - r) / d + 2.0) / 6.0
+    } else {
+        ((r - g) / d + 4.0) / 6.0
+    };
+    let s = if max <= 1e-6 { 0.0 } else { d / max };
+    [h, s, max]
+}
+
+fn hsv_to_rgb([h, s, v]: [f32; 3]) -> [f32; 3] {
+    let f = |n: f32| {
+        let k = (n + h * 6.0).rem_euclid(6.0);
+        v - v * s * k.min(4.0 - k).clamp(0.0, 1.0)
+    };
+    [f(5.0), f(3.0), f(1.0)]
+}
+
+/// Weight of `band` for a pixel of hue `hue` (turns): 1 at its centre,
+/// fading to 0 at the neighbouring centres.
+pub fn band_weight(band: HslBand, hue: f32) -> f32 {
+    let bands = HslBand::ALL;
+    let i = bands.iter().position(|b| *b == band).unwrap_or(0);
+    let center = band.hue();
+    let next = bands[(i + 1) % 8].hue() + if i == 7 { 1.0 } else { 0.0 };
+    let prev = bands[(i + 7) % 8].hue() - if i == 0 { 1.0 } else { 0.0 };
+    let mut d = hue - center;
+    d -= d.round();
+    if d >= 0.0 {
+        (1.0 - d / (next - center)).max(0.0)
+    } else {
+        (1.0 + d / (center - prev)).max(0.0)
+    }
+}
+
+/// The "Adjust" controls on one pixel at `uv` (0..1 over the clip). Mirrored
+/// by `apply_adjust` in transform.wgsl.
+pub fn apply_adjust(rgb: [f32; 3], grade: &GradeValue, uv: [f32; 2]) -> [f32; 3] {
+    let g = |p: GradeParam| grade.get(p);
+    let mut c = rgb;
+    let temperature = g(GradeParam::Temperature);
+    let tint = g(GradeParam::Tint);
+    c[0] *= 1.0 + 0.2 * temperature;
+    c[2] *= 1.0 - 0.2 * temperature;
+    c[1] *= 1.0 - 0.2 * tint;
+    let gamma = (-g(GradeParam::Brightness)).exp2();
+    c = c.map(|v| v.clamp(0.0, 1.0).powf(gamma));
+    let contrast = 1.0 + g(GradeParam::Contrast);
+    c = c.map(|v| (v - 0.5) * contrast + 0.5);
+    let smooth = |e0: f32, e1: f32, x: f32| {
+        let t = ((x - e0) / (e1 - e0)).clamp(0.0, 1.0);
+        t * t * (3.0 - 2.0 * t)
+    };
+    let y = luma(c);
+    let lift = 0.25
+        * (g(GradeParam::Highlights) * smooth(0.5, 1.0, y)
+            + g(GradeParam::Shadows) * (1.0 - smooth(0.0, 0.5, y)));
+    c = c.map(|v| (v + lift).clamp(0.0, 1.0));
+
+    let [h, s, v] = rgb_to_hsv(c);
+    let (mut hue_shift, mut sat, mut lum) = (0.0, 0.0, 0.0);
+    for band in HslBand::ALL {
+        // Greys have no hue: the bands fade in over the first fifth of saturation.
+        let w = band_weight(band, h) * (s * 5.0).min(1.0);
+        let [ph, ps, pl] = band.params();
+        hue_shift += w * g(ph);
+        sat += w * g(ps);
+        lum += w * g(pl);
+    }
+    let shifted = hsv_to_rgb([
+        (h + hue_shift / 12.0).rem_euclid(1.0),
+        (s * (1.0 + sat)).clamp(0.0, 1.0),
+        v,
+    ]);
+    c = shifted.map(|v| (v + 0.3 * lum).clamp(0.0, 1.0));
+
+    let master = CurveChannel::Master.params().map(g);
+    for (i, channel) in [CurveChannel::Red, CurveChannel::Green, CurveChannel::Blue]
+        .into_iter()
+        .enumerate()
+    {
+        c[i] = curve_at(channel.params().map(g), curve_at(master, c[i]));
+    }
+
+    let vignette = g(GradeParam::Vignette);
+    let d =
+        ((uv[0] - 0.5).powi(2) + (uv[1] - 0.5).powi(2)).sqrt() / std::f32::consts::FRAC_1_SQRT_2;
+    let edge = smooth(0.3, 1.0, d);
+    if vignette >= 0.0 {
+        c = c.map(|v| v * (1.0 - vignette * edge));
+    } else {
+        c = c.map(|v| v + (-vignette) * edge * (1.0 - v));
+    }
+    c.map(|v| v.clamp(0.0, 1.0))
+}
+
 /// RGB shift of a wheel's puck at the edge of the disc, and of its
 /// luminance slider at the end of its travel.
 pub const WHEEL_CHROMA_STRENGTH: f32 = 0.2;
@@ -243,6 +678,16 @@ pub fn luma(rgb: [f32; 3]) -> f32 {
 /// `grade` applied to one pixel on the CPU: the same as `apply_grade` in
 /// transform.wgsl, which the compositor tests check it against.
 pub fn apply_grade(rgb: [f32; 3], grade: &GradeValue) -> [f32; 3] {
+    apply_grade_at(rgb, grade, [0.5, 0.5])
+}
+
+/// `apply_grade` at `uv` of the clip, where the vignette is measured.
+pub fn apply_grade_at(rgb: [f32; 3], grade: &GradeValue, uv: [f32; 2]) -> [f32; 3] {
+    let rgb = if grade.adjusts() {
+        apply_adjust(rgb, grade, uv)
+    } else {
+        rgb
+    };
     let [shadows, midtones, highlights] = range_weights(
         luma(rgb),
         grade.get(GradeParam::LowRange),

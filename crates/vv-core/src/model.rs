@@ -1311,6 +1311,9 @@ pub struct ClipFilter {
     pub grow: Keyframed<f32>,
     /// Drop shadow only.
     pub color: Rgba,
+    /// Color correction only: a `.cube` file, mixed in by `GradeParam::LutAmount`.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub lut: Option<std::path::PathBuf>,
 }
 
 /// `ClipFilter` as saved, older files included.
@@ -1332,6 +1335,8 @@ struct StoredClipFilter {
     grow: Keyframed<f32>,
     #[serde(default = "default_shadow_color")]
     color: Rgba,
+    #[serde(default)]
+    lut: Option<std::path::PathBuf>,
 }
 
 fn default_shadow_offset() -> [Keyframed<f32>; 2] {
@@ -1385,6 +1390,7 @@ impl From<StoredClipFilter> for ClipFilter {
             offset: stored.offset,
             grow: stored.grow,
             color: stored.color,
+            lut: stored.lut,
         }
     }
 }
@@ -1404,6 +1410,8 @@ pub struct FilterValue {
     pub offset: [f32; 2],
     pub grow: f32,
     pub color: Rgba,
+    /// `crate::lut::lut_id` of the clip's LUT.
+    pub lut: Option<u64>,
 }
 
 impl FilterValue {
@@ -1417,6 +1425,7 @@ impl FilterValue {
             offset: DEFAULT_SHADOW_OFFSET,
             grow: 0.0,
             color: default_filter_color(kind),
+            lut: None,
         }
     }
 }
@@ -1476,6 +1485,7 @@ impl ClipFilter {
                 default_shadow_grow()
             },
             color: default_filter_color(kind),
+            lut: None,
         }
     }
 
@@ -1492,6 +1502,7 @@ impl ClipFilter {
             ],
             grow: self.grow.value_at(frame),
             color: self.color,
+            lut: self.lut.as_deref().map(crate::lut::lut_id),
         }
     }
 }

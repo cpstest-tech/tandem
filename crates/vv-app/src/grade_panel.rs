@@ -30,6 +30,9 @@ fn preset_label(preset: GradePreset) -> std::borrow::Cow<'static, str> {
 }
 
 pub(crate) fn grade_param_label(param: GradeParam) -> String {
+    if let Some(label) = adjust_param_label(param) {
+        return label;
+    }
     let wheel = match param {
         GradeParam::LowRange => return t!("props.grade_low_range").to_string(),
         GradeParam::HighRange => return t!("props.grade_high_range").to_string(),
@@ -46,6 +49,50 @@ pub(crate) fn grade_param_label(param: GradeParam) -> String {
         t!("props.saturation")
     };
     format!("{} {part}", wheel_label(wheel))
+}
+
+/// Labels of the "Adjust" tab's params, `None` for the wheels and ranges.
+fn adjust_param_label(param: GradeParam) -> Option<String> {
+    use crate::adjust_tab::{band_label, channel_label};
+    if vv_core::BASIC_ADJUSTMENTS.contains(&param) {
+        return Some(
+            match param {
+                GradeParam::Temperature => t!("props.temp"),
+                GradeParam::Tint => t!("props.tint"),
+                GradeParam::Brightness => t!("props.brightness"),
+                GradeParam::Contrast => t!("props.contrast"),
+                GradeParam::Highlights => t!("props.highlight"),
+                GradeParam::Shadows => t!("props.shadows"),
+                GradeParam::Sharpen => t!("props.sharpen"),
+                _ => t!("props.vignette"),
+            }
+            .into_owned(),
+        );
+    }
+    if param == GradeParam::LutAmount {
+        return Some(t!("props.lut_amount").into_owned());
+    }
+    for band in vv_core::HslBand::ALL {
+        if let Some(i) = band.params().iter().position(|p| *p == param) {
+            let part = [
+                t!("props.hue"),
+                t!("props.saturation"),
+                t!("props.brightness"),
+            ];
+            return Some(format!("{} {}", band_label(band), part[i]));
+        }
+    }
+    for channel in vv_core::CurveChannel::ALL {
+        if let Some(i) = channel.params().iter().position(|p| *p == param) {
+            return Some(format!(
+                "{} {} {}",
+                t!("props.curves_rgb"),
+                channel_label(channel),
+                i + 1
+            ));
+        }
+    }
+    None
 }
 
 /// The color the wheel shows at angle `angle`: what a push that way adds,
@@ -199,7 +246,7 @@ pub(crate) struct GradeSectionResponse {
 }
 
 impl GradeSectionResponse {
-    fn set(&mut self, param: GradeParam, value: f32) {
+    pub(crate) fn set(&mut self, param: GradeParam, value: f32) {
         self.keyframes.push((
             KeyframeEdit::Set(KeyframeValue::Grade(param, value)),
             KeyframeTarget::Grade(param),
@@ -590,7 +637,7 @@ fn reset_label(ui: &mut egui::Ui, label: egui::Label, name: &str) -> bool {
     reset
 }
 
-fn scalar_row(
+pub(crate) fn scalar_row(
     ui: &mut egui::Ui,
     response: &mut GradeSectionResponse,
     grade: &GradeValue,

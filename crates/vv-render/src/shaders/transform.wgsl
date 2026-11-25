@@ -77,9 +77,21 @@ struct GradeUniform {
     wheels: array<vec4<f32>, 4>,
     // x: shadows/midtones luma, y: midtones/highlights luma.
     ranges: vec4<f32>,
+    // Temperature, tint, brightness, contrast.
+    basic: vec4<f32>,
+    // Highlights, shadows, vignette, w > 0.5 when any "Adjust" control moved.
+    basic2: vec4<f32>,
+    // Per hue band: hue shift, saturation, luminance.
+    hsl: array<vec4<f32>, 8>,
+    // Knot i of the master, red, green and blue curves.
+    curves: array<vec4<f32>, 5>,
+    // x: sharpen.
+    misc: vec4<f32>,
 };
 
 @group(0) @binding(8) var<uniform> grade: GradeUniform;
+// The color correction's LUT (an identity cube when it has none).
+@group(0) @binding(9) var lut_tex: texture_3d<f32>;
 
 struct VertexOutput {
     @builtin(position) clip_position: vec4<f32>,
@@ -147,9 +159,19 @@ fn filter_id_at(filters: array<vec4<f32>, 2>, i: i32) -> f32 {
 // Applies a filter in sequence to `rgb`; the call order (see the
 // loop in `fs_main`) is the order chosen by the user. New per-pixel filters: a new
 // id (`filter_shader_id`) and a new branch here, nothing else in the pipeline.
-fn apply_filter(rgb: vec3<f32>, id: f32, param: f32) -> vec3<f32> {
+fn apply_filter(rgb: vec3<f32>, id: f32, param: f32, uv: vec2<f32>) -> vec3<f32> {
     if (id > 0.5 && id < 1.5) { // Color correction, parameters in `grade`
-        return apply_grade(rgb);
+        var c = rgb;
+        if (grade.basic2.w > 0.5) {
+            c = apply_adjust(c, uv);
+        }
+        if (grade.ranges.w > 0.5) {
+            let n = f32(textureDimensions(lut_tex).x);
+            let coord = clamp(c, vec3<f32>(0.0), vec3<f32>(1.0)) * ((n - 1.0) / n) + vec3<f32>(0.5 / n);
+            let looked = textureSampleLevel(lut_tex, input_sampler, coord, 0.0).rgb;
+            c = mix(c, looked, clamp(grade.ranges.z, 0.0, 1.0));
+        }
+        return apply_grade(c);
     }
     if (id > 1.5 && id < 2.5) { // Exposure, `param` in stops
         // Scaled in (approximately) linear light, as a camera would.
@@ -209,6 +231,140 @@ fn range_weights(y: f32) -> vec3<f32> {
     let shadows = 1.0 - smoothstep(low - soft, low + soft, y);
     let highlights = smoothstep(high - soft, high + soft, y);
     return vec3<f32>(shadows, 1.0 - shadows - highlights, highlights);
+}
+
+// Mirrors `vv_core::curve_at`: uniform Catmull-Rom through 5 knots.
+fn curve_value(channel: i32, j: i32) -> f32 {
+    let k = grade.curves[j];
+    if (channel == 0) { return k.x; }
+    if (channel == 1) { return k.y; }
+    if (channel == 2) { return k.z; }
+    return k.w;
+}
+
+// Linear extrapolation past the ends, as `vv_core::curve_at`.
+fn curve_knot(channel: i32, j: i32) -> f32 {
+    if (j < 0) {
+        return 2.0 * curve_value(channel, 0) - curve_value(channel, 1);
+    }
+    if (j > 4) {
+        return 2.0 * curve_value(channel, 4) - curve_value(channel, 3);
+    }
+    return curve_value(channel, j);
+}
+
+fn curve_at(channel: i32, x_in: f32) -> f32 {
+    let x = clamp(x_in, 0.0, 1.0) * 4.0;
+    let i = min(i32(floor(x)), 3);
+    let t = x - f32(i);
+    let p0 = curve_knot(channel, i - 1);
+    let p1 = curve_knot(channel, i);
+    let p2 = curve_knot(channel, i + 1);
+    let p3 = curve_knot(channel, i + 2);
+    let t2 = t * t;
+    let t3 = t2 * t;
+    let v = 0.5 * (2.0 * p1 + (p2 - p0) * t + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2
+        + (3.0 * p1 - p0 - 3.0 * p2 + p3) * t3);
+    return clamp(v, 0.0, 1.0);
+}
+
+fn rgb_to_hsv(c: vec3<f32>) -> vec3<f32> {
+    let mx = max(c.r, max(c.g, c.b));
+    let mn = min(c.r, min(c.g, c.b));
+    let d = mx - mn;
+    var h = 0.0;
+    if (d > 1e-6) {
+        if (mx == c.r) {
+            let q = (c.g - c.b) / d;
+            h = (q - 6.0 * floor(q / 6.0)) / 6.0;
+        } else if (mx == c.g) {
+            h = ((c.b - c.r) / d + 2.0) / 6.0;
+        } else {
+            h = ((c.r - c.g) / d + 4.0) / 6.0;
+        }
+    }
+    var s = 0.0;
+    if (mx > 1e-6) {
+        s = d / mx;
+    }
+    return vec3<f32>(h, s, mx);
+}
+
+fn hsv_channel(n: f32, hsv: vec3<f32>) -> f32 {
+    let a = n + hsv.x * 6.0;
+    let k = a - 6.0 * floor(a / 6.0);
+    return hsv.z - hsv.z * hsv.y * clamp(min(k, 4.0 - k), 0.0, 1.0);
+}
+
+fn hsv_to_rgb(hsv: vec3<f32>) -> vec3<f32> {
+    return vec3<f32>(hsv_channel(5.0, hsv), hsv_channel(3.0, hsv), hsv_channel(1.0, hsv));
+}
+
+fn band_center(i: i32) -> f32 {
+    switch i {
+        case 0: { return 0.0; }
+        case 1: { return 30.0 / 360.0; }
+        case 2: { return 60.0 / 360.0; }
+        case 3: { return 120.0 / 360.0; }
+        case 4: { return 180.0 / 360.0; }
+        case 5: { return 240.0 / 360.0; }
+        case 6: { return 270.0 / 360.0; }
+        default: { return 300.0 / 360.0; }
+    }
+}
+
+// Mirrors `vv_core::band_weight`.
+fn band_weight(i: i32, hue: f32) -> f32 {
+    let center = band_center(i);
+    var next = band_center((i + 1) % 8);
+    if (i == 7) { next = next + 1.0; }
+    var prev = band_center((i + 7) % 8);
+    if (i == 0) { prev = prev - 1.0; }
+    var d = hue - center;
+    d = d - round(d);
+    if (d >= 0.0) {
+        return max(1.0 - d / (next - center), 0.0);
+    }
+    return max(1.0 + d / (center - prev), 0.0);
+}
+
+// Mirrors `vv_core::apply_adjust`.
+fn apply_adjust(rgb: vec3<f32>, uv: vec2<f32>) -> vec3<f32> {
+    var c = rgb;
+    let temperature = grade.basic.x;
+    let tint = grade.basic.y;
+    c = c * vec3<f32>(1.0 + 0.2 * temperature, 1.0 - 0.2 * tint, 1.0 - 0.2 * temperature);
+    c = pow(clamp(c, vec3<f32>(0.0), vec3<f32>(1.0)), vec3<f32>(exp2(-grade.basic.z)));
+    c = (c - vec3<f32>(0.5)) * (1.0 + grade.basic.w) + vec3<f32>(0.5);
+    let y = luma(c);
+    let lift = 0.25 * (grade.basic2.x * smoothstep(0.5, 1.0, y)
+        + grade.basic2.y * (1.0 - smoothstep(0.0, 0.5, y)));
+    c = clamp(c + vec3<f32>(lift), vec3<f32>(0.0), vec3<f32>(1.0));
+
+    let hsv = rgb_to_hsv(c);
+    var shift = vec3<f32>(0.0);
+    for (var i = 0; i < 8; i = i + 1) {
+        shift = shift + band_weight(i, hsv.x) * min(hsv.y * 5.0, 1.0) * grade.hsl[i].xyz;
+    }
+    let h = hsv.x + shift.x / 12.0;
+    c = hsv_to_rgb(vec3<f32>(h - floor(h), clamp(hsv.y * (1.0 + shift.y), 0.0, 1.0), hsv.z));
+    c = clamp(c + vec3<f32>(0.3 * shift.z), vec3<f32>(0.0), vec3<f32>(1.0));
+
+    c = vec3<f32>(
+        curve_at(1, curve_at(0, c.r)),
+        curve_at(2, curve_at(0, c.g)),
+        curve_at(3, curve_at(0, c.b)),
+    );
+
+    let vignette = grade.basic2.z;
+    let d = distance(uv, vec2<f32>(0.5)) / 0.70710677;
+    let edge = smoothstep(0.3, 1.0, d);
+    if (vignette >= 0.0) {
+        c = c * (1.0 - vignette * edge);
+    } else {
+        c = c + (-vignette) * edge * (vec3<f32>(1.0) - c);
+    }
+    return clamp(c, vec3<f32>(0.0), vec3<f32>(1.0));
 }
 
 fn apply_grade(rgb: vec3<f32>) -> vec3<f32> {
@@ -431,7 +587,17 @@ fn shade(in: VertexOutput) -> vec4<f32> {
         rgb = transform.solid.rgb;
         out_alpha = select(0.0, alpha * transform.solid.a * coverage, inside);
     } else {
-        let y_sample = textureSample(y_tex, input_sampler, source_uv).r;
+        var y_sample = textureSample(y_tex, input_sampler, source_uv).r;
+        let sharpen = grade.misc.x;
+        if (sharpen > 0.0) {
+            let px = 1.0 / vec2<f32>(textureDimensions(y_tex));
+            let around = 0.25 * (
+                textureSampleLevel(y_tex, input_sampler, source_uv + vec2<f32>(px.x, 0.0), 0.0).r
+                + textureSampleLevel(y_tex, input_sampler, source_uv - vec2<f32>(px.x, 0.0), 0.0).r
+                + textureSampleLevel(y_tex, input_sampler, source_uv + vec2<f32>(0.0, px.y), 0.0).r
+                + textureSampleLevel(y_tex, input_sampler, source_uv - vec2<f32>(0.0, px.y), 0.0).r);
+            y_sample = clamp(y_sample + 1.5 * sharpen * (y_sample - around), 0.0, 1.0);
+        }
         let u_texel = textureSample(u_tex, input_sampler, source_uv);
         let v_planar = textureSample(v_tex, input_sampler, source_uv).r;
         let u_sample = u_texel.r;
@@ -448,7 +614,7 @@ fn shade(in: VertexOutput) -> vec4<f32> {
             out_alpha = out_alpha * matte;
             rgb = chroma_despill(rgb, matte);
         } else if (id > 0.5) {
-            rgb = apply_filter(rgb, id, filter_id_at(transform.filter_params, slot));
+            rgb = apply_filter(rgb, id, filter_id_at(transform.filter_params, slot), source_uv);
         }
     }
     // 1x1 placeholder for a layer without real per-pixel coverage: it always

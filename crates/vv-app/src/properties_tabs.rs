@@ -180,15 +180,6 @@ pub(crate) fn placeholder_section(ui: &mut egui::Ui, title: &str, rows: &[Cow<'s
     }
 }
 
-/// Folding section with a single disabled button.
-pub(crate) fn placeholder_button_section(ui: &mut egui::Ui, title: &str, button: &str) {
-    ui.add_space(6.0);
-    let (open, _) = section_header(ui, title, false);
-    if open {
-        soon(ui.add_enabled(false, egui::Button::new(button)));
-    }
-}
-
 fn placeholder_checkbox_section(ui: &mut egui::Ui, title: &str) {
     ui.add_space(6.0);
     let (open, _) = section_header(ui, title, false);
@@ -412,35 +403,6 @@ pub(crate) fn audio_placeholders(ui: &mut egui::Ui) {
 
 pub(crate) fn text_placeholders(ui: &mut egui::Ui) {
     placeholder_section(ui, &t!("props.bubble_effects"), &[t!("props.strength")]);
-}
-
-pub(crate) fn adjust_placeholders(ui: &mut egui::Ui) {
-    placeholder_button_section(ui, &t!("props.lut"), &t!("props.lut_import"));
-    placeholder_section(
-        ui,
-        &t!("props.adj_basic"),
-        &[
-            t!("props.temp"),
-            t!("props.hue"),
-            t!("props.saturation"),
-            t!("props.brightness"),
-            t!("props.contrast"),
-            t!("props.highlight"),
-            t!("props.shadows"),
-            t!("props.sharpen"),
-            t!("props.vignette"),
-        ],
-    );
-    placeholder_section(
-        ui,
-        &t!("props.hsl"),
-        &[
-            t!("props.hue"),
-            t!("props.saturation"),
-            t!("props.brightness"),
-        ],
-    );
-    placeholder_section(ui, &t!("props.curves_rgb"), &[t!("props.contrast")]);
 }
 
 #[derive(Clone, Copy)]

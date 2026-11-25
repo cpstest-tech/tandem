@@ -8,6 +8,7 @@
 extern crate rust_i18n;
 rust_i18n::i18n!("locales", fallback = "en");
 
+mod adjust_tab;
 mod ai_clips;
 mod ai_context;
 mod ai_sequence;
@@ -634,6 +635,7 @@ struct VenturiApp {
     reframe: reframe::State,
     dub: dub::State,
     beat: beat_sync::State,
+    adjust: adjust_tab::AdjustState,
     vertical: vertical_layout::State,
     transcript: transcript::State,
     style_packs: style_packs::State,
@@ -795,6 +797,7 @@ impl Default for VenturiApp {
             reframe: reframe::State::default(),
             dub: dub::State::default(),
             beat: beat_sync::State::default(),
+            adjust: Default::default(),
             vertical: vertical_layout::State::default(),
             transcript: transcript::State::default(),
             style_packs: style_packs::State::default(),

@@ -252,3 +252,58 @@ fn auto_balance_measures_the_neutral_surfaces_not_a_colored_object() {
         "still orange: {orange:?}"
     );
 }
+
+fn adjusted(params: &[(GradeParam, f32)], rgb: [f32; 3]) -> [f32; 3] {
+    let mut grade = GradeValue::NEUTRAL;
+    for (p, v) in params {
+        grade.set(*p, *v);
+    }
+    apply_grade(rgb, &grade)
+}
+
+#[test]
+fn neutral_adjust_controls_change_nothing() {
+    assert!(!GradeValue::NEUTRAL.adjusts());
+    let rgb = [0.3, 0.6, 0.2];
+    let out = apply_adjust(rgb, &GradeValue::NEUTRAL, [0.1, 0.9]);
+    assert!((0..3).all(|i| (out[i] - rgb[i]).abs() < 1e-5), "{out:?}");
+}
+
+#[test]
+fn each_adjust_control_moves_the_right_way() {
+    let grey = [0.5, 0.5, 0.5];
+    let warm = adjusted(&[(GradeParam::Temperature, 1.0)], grey);
+    assert!(warm[0] > warm[2]);
+    assert!(adjusted(&[(GradeParam::Brightness, 0.5)], grey)[1] > 0.5);
+    let contrast = adjusted(&[(GradeParam::Contrast, 0.5)], [0.8, 0.8, 0.8]);
+    assert!(contrast[0] > 0.8);
+    assert!(adjusted(&[(GradeParam::Shadows, 1.0)], [0.1, 0.1, 0.1])[0] > 0.2);
+    let red = [0.8, 0.2, 0.2];
+    let desaturated = adjusted(&[(GradeParam::HslRedSat, -1.0)], red);
+    assert!(
+        (desaturated[0] - desaturated[1]).abs() < 0.05,
+        "{desaturated:?}"
+    );
+    let untouched = adjusted(&[(GradeParam::HslRedSat, -1.0)], [0.2, 0.2, 0.8]);
+    assert!((untouched[2] - 0.8).abs() < 0.01, "blue is another band");
+    let lifted = adjusted(&[(GradeParam::CurveMaster2, 0.75)], grey);
+    assert!((lifted[0] - 0.75).abs() < 1e-4);
+}
+
+#[test]
+fn the_vignette_darkens_the_corners_only() {
+    let mut grade = GradeValue::NEUTRAL;
+    grade.set(GradeParam::Vignette, 1.0);
+    let centre = apply_grade_at([0.6; 3], &grade, [0.5, 0.5]);
+    let corner = apply_grade_at([0.6; 3], &grade, [0.0, 0.0]);
+    assert!((centre[0] - 0.6).abs() < 1e-5);
+    assert!(corner[0] < 0.1);
+}
+
+#[test]
+fn a_curve_through_its_neutral_knots_is_the_identity() {
+    let knots = [0.0, 0.25, 0.5, 0.75, 1.0];
+    for x in [0.0, 0.1, 0.33, 0.5, 0.9, 1.0] {
+        assert!((curve_at(knots, x) - x).abs() < 1e-5);
+    }
+}

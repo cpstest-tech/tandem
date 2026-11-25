@@ -12,6 +12,7 @@ pub mod edit;
 pub mod grade;
 pub mod id_map;
 mod legacy_slotmap;
+pub mod lut;
 pub mod mask;
 pub mod model;
 pub mod otio;

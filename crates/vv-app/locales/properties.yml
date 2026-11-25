@@ -973,6 +973,62 @@ props.hsl:
   en: "HSL"
   it: "HSL"
 
+props.tint:
+  en: "Tint"
+  it: "Tinta"
+
+props.hsl_red:
+  en: "Red"
+  it: "Rosso"
+
+props.hsl_orange:
+  en: "Orange"
+  it: "Arancione"
+
+props.hsl_yellow:
+  en: "Yellow"
+  it: "Giallo"
+
+props.hsl_green:
+  en: "Green"
+  it: "Verde"
+
+props.hsl_cyan:
+  en: "Cyan"
+  it: "Ciano"
+
+props.hsl_blue:
+  en: "Blue"
+  it: "Blu"
+
+props.hsl_purple:
+  en: "Purple"
+  it: "Viola"
+
+props.hsl_magenta:
+  en: "Magenta"
+  it: "Magenta"
+
+props.curve_master:
+  en: "Master"
+  it: "Generale"
+
+props.curves_hint:
+  en: "Drag a point up or down; double-click to reset the curve"
+  it: "Trascina un punto in su o in giù; doppio clic per azzerare la curva"
+
+props.lut_remove:
+  en: "Remove"
+  it: "Rimuovi"
+
+props.lut_amount:
+  en: "Strength"
+  it: "Intensità"
+
+props.lut_invalid:
+  en: "Not a usable LUT"
+  it: "LUT non utilizzabile"
+
 props.curves_rgb:
   en: "RGB curves"
   it: "Curve RGB"

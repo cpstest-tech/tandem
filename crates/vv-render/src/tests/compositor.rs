@@ -2812,3 +2812,122 @@ fn chroma_key_shows_what_is_under_the_key_color_and_keeps_the_rest() {
     assert_eq!(render(green)[..3], [0, 0, 255], "the screen is keyed out");
     assert_eq!(render(RED)[..3], [255, 0, 0], "other colors stay");
 }
+
+#[test]
+fn the_adjust_controls_match_their_reference() {
+    use vv_core::GradeParam::*;
+    let grades = [
+        grade_with(&[(Temperature, 0.6), (Tint, -0.4)]),
+        grade_with(&[(Brightness, 0.5), (Contrast, 0.4)]),
+        grade_with(&[(Brightness, -0.7), (Contrast, -0.5), (Highlights, 0.6)]),
+        grade_with(&[(Shadows, 0.8), (Highlights, -0.5)]),
+        grade_with(&[(HslRedHue, 0.8), (HslRedSat, -0.5), (HslGreenLum, 0.4)]),
+        grade_with(&[(HslBlueSat, 0.9), (HslCyanHue, -0.6), (HslMagentaLum, -0.5)]),
+        grade_with(&[(CurveMaster2, 0.7), (CurveRed1, 0.1), (CurveBlue3, 0.95)]),
+        grade_with(&[(Vignette, 0.8)]),
+        grade_with(&[(Vignette, -0.6), (Temperature, -0.3), (Saturation, 1.5)]),
+    ];
+    let colors = [
+        [0.05, 0.08, 0.1],
+        [0.8, 0.25, 0.2],
+        [0.2, 0.7, 0.3],
+        [0.2, 0.4, 0.9],
+        [0.5, 0.5, 0.5],
+        [0.95, 0.9, 0.8],
+    ];
+    // The first pixel of the 4x4 output: where the vignette is measured.
+    let uv = [0.125, 0.125];
+    let compositor = Compositor::new_headless();
+    for grade in &grades {
+        for color in colors {
+            let got = render_graded(&compositor, color, *grade);
+            let expected =
+                vv_core::apply_grade_at(color, grade, uv).map(|c| (c * 255.0).round() as u8);
+            assert!(
+                (0..3).all(|i| got[i].abs_diff(expected[i]) <= 2),
+                "{color:?} {grade:?}: {got:?} vs {expected:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn a_lut_maps_the_colors_and_its_amount_mixes_it() {
+    let dir = std::env::temp_dir().join(format!("vv-render-lut-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("invert.cube");
+    let mut text = String::from("LUT_3D_SIZE 3\n");
+    for b in 0..3 {
+        for g in 0..3 {
+            for r in 0..3 {
+                let v = |c: i32| 1.0 - c as f32 / 2.0;
+                text += &format!("{} {} {}\n", v(r), v(g), v(b));
+            }
+        }
+    }
+    std::fs::write(&path, text).unwrap();
+    let id = vv_core::lut::lut_id(&path);
+    let compositor = Compositor::new_headless();
+    let render = |amount: f32| {
+        let mut grade = vv_core::GradeValue::NEUTRAL;
+        grade.set(vv_core::GradeParam::LutAmount, amount);
+        let filters = [vv_core::FilterValue {
+            grade,
+            lut: Some(id),
+            ..vv_core::FilterValue::new(vv_core::FilterKind::ColorCorrection)
+        }];
+        let out = compositor.render_layers(
+            &[Layer {
+                filters: &filters,
+                ..Layer::new(
+                    LayerContent::Solid(vv_core::Rgba::from([0.2, 0.5, 0.9, 1.0])),
+                    Transform::default(),
+                )
+            }],
+            OutputFrame::exact(4, 4),
+        );
+        out.as_chunks::<4>().0[0]
+    };
+    let full = render(1.0);
+    for (got, want) in full.iter().zip([0.8f32, 0.5, 0.1]) {
+        assert!(got.abs_diff((want * 255.0).round() as u8) <= 2, "{full:?}");
+    }
+    let half = render(0.5);
+    for (got, want) in half.iter().zip([0.5f32, 0.5, 0.5]) {
+        assert!(got.abs_diff((want * 255.0).round() as u8) <= 2, "{half:?}");
+    }
+    let _ = std::fs::remove_dir_all(dir);
+}
+
+#[test]
+fn sharpen_raises_the_contrast_of_an_edge() {
+    let compositor = Compositor::new_headless();
+    let input = quadrant_frame();
+    let render = |sharpen: f32| {
+        let mut grade = vv_core::GradeValue::NEUTRAL;
+        grade.set(vv_core::GradeParam::Sharpen, sharpen);
+        let filters = [vv_core::FilterValue {
+            grade,
+            ..vv_core::FilterValue::new(vv_core::FilterKind::ColorCorrection)
+        }];
+        let out = compositor.render_layers(
+            &[Layer {
+                filters: &filters,
+                ..Layer::new(
+                    LayerContent::Video {
+                        frame: input.as_yuv_frame(),
+                        source_size: (4, 4),
+                    },
+                    Transform::default(),
+                )
+            }],
+            OutputFrame::exact(4, 4),
+        );
+        // Top row: the dark pixel and the bright one at the vertical edge.
+        (out[4], out[2 * 4])
+    };
+    let (dark, bright) = render(0.0);
+    let (dark_sharp, bright_sharp) = render(1.0);
+    assert!(dark_sharp < dark, "{dark_sharp} vs {dark}");
+    assert!(bright_sharp > bright, "{bright_sharp} vs {bright}");
+}

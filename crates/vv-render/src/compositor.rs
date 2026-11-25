@@ -7,6 +7,7 @@
 //!   registers the texture in egui-wgpu. Requires `Compositor::new` on the
 //!   same device as egui.
 
+use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use vv_core::{BlendMode, ColorMatrix, ProcessingPrecision, Transform};
 use wgpu::util::DeviceExt;
@@ -871,12 +872,18 @@ struct GradeUniform {
     wheels: [[f32; 4]; 4],
     /// x: shadows/midtones luma, y: midtones/highlights luma.
     ranges: [f32; 4],
+    basic: [f32; 4],
+    basic2: [f32; 4],
+    hsl: [[f32; 4]; 8],
+    curves: [[f32; 4]; 5],
+    /// x: sharpen.
+    misc: [f32; 4],
 }
 
 impl GradeUniform {
     /// From the pass's color correction; a pass has at most one, since a clip
     /// has at most one filter per kind.
-    fn new(filters: &[vv_core::FilterValue]) -> Self {
+    fn new(filters: &[vv_core::FilterValue], lut: bool) -> Self {
         let grade = filters
             .iter()
             .find(|f| f.kind == vv_core::FilterKind::ColorCorrection)
@@ -886,14 +893,41 @@ impl GradeUniform {
             let [r, g, b] = grade.wheel_shift(wheel);
             *slot = [r, g, b, grade.get(wheel.saturation())];
         }
+        use vv_core::GradeParam as G;
+        let mut hsl = [[0.0; 4]; 8];
+        for (slot, band) in hsl.iter_mut().zip(vv_core::HslBand::ALL) {
+            let [h, s, l] = band.params().map(|p| grade.get(p));
+            *slot = [h, s, l, 0.0];
+        }
+        let mut curves = [[0.0; 4]; 5];
+        for (c, channel) in vv_core::CurveChannel::ALL.into_iter().enumerate() {
+            for (knot, param) in channel.params().into_iter().enumerate() {
+                curves[knot][c] = grade.get(param);
+            }
+        }
         Self {
             wheels,
             ranges: [
-                grade.get(vv_core::GradeParam::LowRange),
-                grade.get(vv_core::GradeParam::HighRange),
-                0.0,
-                0.0,
+                grade.get(G::LowRange),
+                grade.get(G::HighRange),
+                grade.get(G::LutAmount),
+                if lut { 1.0 } else { 0.0 },
             ],
+            basic: [
+                grade.get(G::Temperature),
+                grade.get(G::Tint),
+                grade.get(G::Brightness),
+                grade.get(G::Contrast),
+            ],
+            basic2: [
+                grade.get(G::Highlights),
+                grade.get(G::Shadows),
+                grade.get(G::Vignette),
+                if grade.adjusts() { 1.0 } else { 0.0 },
+            ],
+            hsl,
+            curves,
+            misc: [grade.get(G::Sharpen), 0.0, 0.0, 0.0],
         }
     }
 }
@@ -922,6 +956,10 @@ pub struct Compositor {
     frame_blend: std::sync::OnceLock<crate::frame_blend::FrameBlend>,
     custom: crate::custom_shader::CustomShaders,
     text: crate::text_gpu::TextGpu,
+    /// Bound when a pass has no LUT.
+    identity_lut: wgpu::TextureView,
+    /// By `vv_core::lut::lut_id`; `None` for a file that failed to load.
+    luts: Mutex<HashMap<u64, Option<wgpu::TextureView>>>,
 }
 
 #[derive(Default)]
@@ -1093,6 +1131,16 @@ impl Compositor {
                     },
                     count: None,
                 },
+                wgpu::BindGroupLayoutEntry {
+                    binding: 9,
+                    visibility: wgpu::ShaderStages::FRAGMENT,
+                    ty: wgpu::BindingType::Texture {
+                        sample_type: wgpu::TextureSampleType::Float { filterable: true },
+                        view_dimension: wgpu::TextureViewDimension::D3,
+                        multisampled: false,
+                    },
+                    count: None,
+                },
             ],
         });
         let work = WorkPipelines::new(
@@ -1168,6 +1216,7 @@ impl Compositor {
         });
 
         let device_for_custom = Arc::clone(&device);
+        let queue_for_lut = Arc::clone(&queue);
         let compositor = Self {
             device,
             queue,
@@ -1185,6 +1234,17 @@ impl Compositor {
             frame_blend: std::sync::OnceLock::new(),
             custom: crate::custom_shader::CustomShaders::new(&device_for_custom),
             text: crate::text_gpu::TextGpu::new(&device_for_custom),
+            identity_lut: lut_texture(
+                &device_for_custom,
+                &queue_for_lut,
+                &vv_core::lut::Lut {
+                    size: 2,
+                    data: (0..8)
+                        .map(|i| [i & 1, (i >> 1) & 1, (i >> 2) & 1].map(|c| c as f32))
+                        .collect(),
+                },
+            ),
+            luts: Mutex::new(HashMap::new()),
         };
         compositor.log_work_format();
         compositor
@@ -2677,11 +2737,13 @@ impl Compositor {
             filters,
             blend,
         );
+        let lut = self.lut_for(filters);
         let bind_group = self.bind_group_for(
             [mask, &u_view, &v_view, &a_view, backdrop],
             &uniform,
             &MaskUniform::new(masks, transform, output),
-            &GradeUniform::new(filters),
+            &GradeUniform::new(filters, lut.is_some()),
+            lut.as_ref().unwrap_or(&self.identity_lut),
         );
         planes.extend([u_texture, v_texture, a_texture]);
         bind_group
@@ -2748,11 +2810,13 @@ impl Compositor {
         if matches!(frame.chroma, YuvChroma::Interleaved(_)) {
             uniform.planes[0] = 1.0;
         }
+        let lut = self.lut_for(filters);
         let bind_group = self.bind_group_for(
             [&y_view, &u_view, &v_view, &a_view, backdrop],
             &uniform,
             &MaskUniform::new(masks, transform, output),
-            &GradeUniform::new(filters),
+            &GradeUniform::new(filters, lut.is_some()),
+            lut.as_ref().unwrap_or(&self.identity_lut),
         );
         planes.extend([y_texture, u_texture, v_texture, a_texture]);
         bind_group
@@ -2812,11 +2876,13 @@ impl Compositor {
                 clear.a as f32,
             ];
         }
+        let lut = self.lut_for(filters);
         let bind_group = self.bind_group_for(
             [rgba_view, &u_view, &v_view, &a_view, backdrop],
             &uniform,
             &MaskUniform::new(masks, transform, output),
-            &GradeUniform::new(filters),
+            &GradeUniform::new(filters, lut.is_some()),
+            lut.as_ref().unwrap_or(&self.identity_lut),
         );
         planes.extend([u_texture, v_texture, a_texture]);
         bind_group
@@ -2830,6 +2896,7 @@ impl Compositor {
         uniform: &TransformUniform,
         masks: &MaskUniform,
         grade: &GradeUniform,
+        lut: &wgpu::TextureView,
     ) -> wgpu::BindGroup {
         let uniform_buffer = self
             .device
@@ -2892,8 +2959,30 @@ impl Compositor {
                     binding: 8,
                     resource: grade_buffer.as_entire_binding(),
                 },
+                wgpu::BindGroupEntry {
+                    binding: 9,
+                    resource: wgpu::BindingResource::TextureView(lut),
+                },
             ],
         })
+    }
+
+    /// The LUT of the pass's color correction, loaded on first use.
+    fn lut_for(&self, filters: &[vv_core::FilterValue]) -> Option<wgpu::TextureView> {
+        let id = filters
+            .iter()
+            .find(|f| f.kind == vv_core::FilterKind::ColorCorrection)?
+            .lut?;
+        let mut luts = self.luts.lock().unwrap();
+        luts.entry(id)
+            .or_insert_with(|| match vv_core::lut::lut_for_id(id)? {
+                Ok(lut) => Some(lut_texture(&self.device, &self.queue, &lut)),
+                Err(e) => {
+                    eprintln!("vv-render: LUT {id:x}: {e}");
+                    None
+                }
+            })
+            .clone()
     }
 
     /// An R8 plane with `data`, taken from the pool if there is one of the same
@@ -3127,3 +3216,66 @@ impl Compositor {
 #[cfg(test)]
 #[path = "tests/compositor.rs"]
 mod tests;
+
+/// Nearest f16 of `v` (no NaN/inf: LUT values are small and finite).
+fn f16_bits(v: f32) -> u16 {
+    let bits = v.to_bits();
+    let sign = ((bits >> 16) & 0x8000) as u16;
+    let abs = f32::from_bits(bits & 0x7fff_ffff);
+    if abs < 6.1e-5 {
+        // Subnormal range: 2^-24 steps.
+        return sign | (abs / 5.960_464_5e-8).round() as u16;
+    }
+    let abs = abs.min(65504.0);
+    let b = abs.to_bits();
+    let exp = ((b >> 23) as i32) - 127 + 15;
+    let mantissa = b & 0x7f_ffff;
+    let mut half = ((exp as u32) << 10) | (mantissa >> 13);
+    if mantissa & 0x1000 != 0 {
+        half += 1;
+    }
+    sign | half as u16
+}
+
+/// A 3D texture of `lut`, sampled trilinearly by the color correction.
+fn lut_texture(
+    device: &wgpu::Device,
+    queue: &wgpu::Queue,
+    lut: &vv_core::lut::Lut,
+) -> wgpu::TextureView {
+    let n = lut.size as u32;
+    let texture = device.create_texture(&wgpu::TextureDescriptor {
+        label: Some("vv-render lut"),
+        size: wgpu::Extent3d {
+            width: n,
+            height: n,
+            depth_or_array_layers: n,
+        },
+        mip_level_count: 1,
+        sample_count: 1,
+        dimension: wgpu::TextureDimension::D3,
+        format: wgpu::TextureFormat::Rgba16Float,
+        usage: wgpu::TextureUsages::TEXTURE_BINDING | wgpu::TextureUsages::COPY_DST,
+        view_formats: &[],
+    });
+    let texels: Vec<u16> = lut
+        .data
+        .iter()
+        .flat_map(|[r, g, b]| [*r, *g, *b, 1.0].map(|c| f16_bits(c.clamp(0.0, 1.0))))
+        .collect();
+    queue.write_texture(
+        texture.as_image_copy(),
+        bytemuck::cast_slice(&texels),
+        wgpu::TexelCopyBufferLayout {
+            offset: 0,
+            bytes_per_row: Some(n * 8),
+            rows_per_image: Some(n),
+        },
+        wgpu::Extent3d {
+            width: n,
+            height: n,
+            depth_or_array_layers: n,
+        },
+    );
+    texture.create_view(&wgpu::TextureViewDescriptor::default())
+}
