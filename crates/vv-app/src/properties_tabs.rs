@@ -180,15 +180,6 @@ pub(crate) fn placeholder_section(ui: &mut egui::Ui, title: &str, rows: &[Cow<'s
     }
 }
 
-fn placeholder_checkbox_section(ui: &mut egui::Ui, title: &str) {
-    ui.add_space(6.0);
-    let (open, _) = section_header(ui, title, false);
-    if open {
-        let mut off = false;
-        soon(ui.add_enabled(false, egui::Checkbox::new(&mut off, title)));
-    }
-}
-
 type ChromaEdit = Box<dyn Fn(&mut vv_core::ClipFilter)>;
 
 impl VenturiApp {
@@ -370,14 +361,6 @@ impl VenturiApp {
             }
         }
     }
-}
-
-pub(crate) fn retouch_tab(ui: &mut egui::Ui) {
-    placeholder_checkbox_section(ui, &t!("props.enhance"));
-}
-
-pub(crate) fn audio_placeholders(ui: &mut egui::Ui) {
-    placeholder_checkbox_section(ui, &t!("props.voice_changer"));
 }
 
 pub(crate) fn text_placeholders(ui: &mut egui::Ui) {

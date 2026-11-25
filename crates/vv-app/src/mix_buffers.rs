@@ -34,6 +34,7 @@ struct OwnedStretch {
     frames: Range<u64>,
     tempo: f64,
     reverse: bool,
+    voice: Option<vv_core::VoiceEffect>,
     format: (u32, u16),
 }
 
@@ -60,6 +61,7 @@ impl OwnedStretch {
             frames: self.frames.clone(),
             tempo: self.tempo,
             reverse: self.reverse,
+            voice: self.voice,
             sample_rate: self.format.0,
             channels: self.format.1,
             key: self.key,
@@ -1208,6 +1210,7 @@ impl AudioSource for MixBufferCache {
             frames: request.frames,
             tempo: request.tempo,
             reverse: request.reverse,
+            voice: request.voice,
             format: (request.sample_rate, request.channels),
         });
         self.stretched

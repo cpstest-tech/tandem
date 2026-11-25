@@ -307,3 +307,21 @@ fn a_curve_through_its_neutral_knots_is_the_identity() {
         assert!((curve_at(knots, x) - x).abs() < 1e-5);
     }
 }
+
+#[test]
+fn auto_enhance_brightens_a_dull_dark_picture() {
+    let pixels: Vec<[f32; 3]> = (0..1000)
+        .map(|i| {
+            let v = 0.1 + 0.25 * (i as f32 / 1000.0);
+            [v, v * 0.95, v * 0.9]
+        })
+        .collect();
+    let enhanced = auto_enhance(&GradeValue::NEUTRAL, pixels.iter().copied());
+    assert!(enhanced.get(GradeParam::Brightness) > 0.0);
+    assert!(enhanced.get(GradeParam::Contrast) > 0.0);
+    assert!(enhanced.get(GradeParam::Saturation) > 1.0);
+    assert!(enhanced.get(GradeParam::Sharpen) > 0.0);
+    let before = luma(apply_grade(pixels[500], &GradeValue::NEUTRAL));
+    let after = luma(apply_grade(pixels[500], &enhanced));
+    assert!(after > before);
+}

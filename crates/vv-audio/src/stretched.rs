@@ -36,6 +36,8 @@ pub struct StretchRequest<'a> {
     pub tempo: f64,
     /// The stretched result plays backwards (a reversed clip).
     pub reverse: bool,
+    /// Voice changer of the clip, applied with the stretch.
+    pub voice: Option<vv_core::VoiceEffect>,
     pub sample_rate: u32,
     pub channels: u16,
     /// Same key, same stretch, in every build.
@@ -93,7 +95,21 @@ impl StretchRequest<'_> {
                 SampleBlocks::contiguous(Arc::new(mixed), self.frames.start, self.channels)
             }
         };
-        let stretched = if self.tempo == 1.0 {
+        let stretched = if self.voice.is_some() {
+            let range = self.frames.start.max(input.start())..self.frames.end.min(input.end());
+            crate::stretch::Stretcher::with_voice(
+                self.sample_rate,
+                self.channels,
+                self.tempo,
+                self.voice,
+            )
+            .and_then(|mut s| {
+                let mut out = Vec::new();
+                s.push(&input.to_vec(range), &mut out)?;
+                s.finish(&mut out)?;
+                Ok(out)
+            })
+        } else if self.tempo == 1.0 {
             let range = self.frames.start.max(input.start())..self.frames.end.min(input.end());
             Ok(input.to_vec(range))
         } else {

@@ -191,6 +191,58 @@ fn commands_for(
 }
 
 impl VenturiApp {
+    /// «Retouch»: a one-click enhance of the playhead frame, written to the
+    /// Adjust tab's sliders.
+    pub(crate) fn show_retouch_tab(
+        &mut self,
+        ui: &mut egui::Ui,
+        targets: &[PanelTarget],
+        pending: &mut Vec<BoxedCommand>,
+    ) {
+        let Some(primary) = targets.first().copied() else {
+            return;
+        };
+        ui.add_space(6.0);
+        let (open, _) = section_header(ui, &t!("props.enhance"), false);
+        if !open {
+            return;
+        }
+        ui.small(t!("props.enhance_hint"));
+        if !ui.button(t!("props.enhance_apply")).clicked() {
+            return;
+        }
+        let grade = {
+            let tl = &self.session.project.timelines[primary.timeline];
+            tl.clip(primary.track_index, primary.clip_id)
+                .and_then(|c| c.effects.filters.iter().find(|f| f.kind.has_grade()))
+                .map_or(vv_core::GradeValue::NEUTRAL, |f| {
+                    f.grade.value_at(primary.source_frame)
+                })
+        };
+        let Some(pixels) = self.isolated_pixels(primary) else {
+            return;
+        };
+        let pixels = pixels.as_chunks::<4>().0;
+        let step = (pixels.len() / 250_000).max(1);
+        let enhanced = vv_core::auto_enhance(
+            &grade,
+            pixels
+                .iter()
+                .step_by(step)
+                .map(|p| [p[0], p[1], p[2]].map(|c| c as f32 / 255.0)),
+        );
+        let mut section = GradeSectionResponse::default();
+        for param in GradeParam::ALL {
+            if enhanced.get(param) != grade.get(param) {
+                section.set(param, enhanced.get(param));
+            }
+        }
+        let tl = self
+            .timeline_id
+            .map(|id| &self.session.project.timelines[id]);
+        pending.extend(commands_for(tl, targets, &section, None));
+    }
+
     pub(crate) fn show_adjust_tab(
         &mut self,
         ui: &mut egui::Ui,

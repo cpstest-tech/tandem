@@ -105,6 +105,7 @@ mod vertical_layout;
 mod viewer_overlay;
 mod viewer_waveform;
 mod viewer_zoom;
+mod voice_ui;
 mod voiceover;
 mod waveform_worker;
 #[cfg(target_os = "linux")]
@@ -2209,12 +2210,15 @@ impl VenturiApp {
         grade: &vv_core::GradeValue,
         target: PanelTarget,
     ) {
-        let Some(isolation) = self.isolation_at_playhead(&target) else {
-            return;
-        };
-        let Some(layers) = self.timeline_video_layers(Some(isolation)) else {
-            return;
-        };
+        if let Some(pixels) = self.isolated_pixels(target) {
+            grade_panel::balance_edits(section, grade, &pixels);
+        }
+    }
+
+    /// RGBA of `target` at the playhead, composed apart from what covers it.
+    pub(crate) fn isolated_pixels(&mut self, target: PanelTarget) -> Option<Vec<u8>> {
+        let isolation = self.isolation_at_playhead(&target)?;
+        let layers = self.timeline_video_layers(Some(isolation))?;
         let output = self.viewer_output(&layers);
         let render_layers: Vec<vv_render::Layer> = layers
             .iter()
@@ -2223,10 +2227,10 @@ impl VenturiApp {
         let texture = self
             .compositor
             .render_layers_to_texture(&render_layers, output);
-        let pixels = self
-            .compositor
-            .read_rgba_texture(&texture, texture.width(), texture.height());
-        grade_panel::balance_edits(section, grade, &pixels);
+        Some(
+            self.compositor
+                .read_rgba_texture(&texture, texture.width(), texture.height()),
+        )
     }
 
     /// The frame the viewer composes `layers` into: at the resolution of the

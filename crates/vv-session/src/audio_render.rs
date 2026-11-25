@@ -271,7 +271,7 @@ pub fn stretch_offline(
 ) -> Result<SampleBlocks, ExportError> {
     let mut out = Vec::new();
     // Only reversed: the samples as they are, no stretcher needed.
-    if request.tempo == 1.0 {
+    if request.tempo == 1.0 && request.voice.is_none() {
         render(
             request.project,
             Mix::Stretch(request),
@@ -283,8 +283,13 @@ pub fn stretch_offline(
             },
         )?;
     } else {
-        let mut stretcher = Stretcher::new(PROJECT_SAMPLE_RATE, PROJECT_CHANNELS, request.tempo)
-            .map_err(ExportError::Failed)?;
+        let mut stretcher = Stretcher::with_voice(
+            PROJECT_SAMPLE_RATE,
+            PROJECT_CHANNELS,
+            request.tempo,
+            request.voice,
+        )
+        .map_err(ExportError::Failed)?;
         let mut failed = None;
         render(
             request.project,

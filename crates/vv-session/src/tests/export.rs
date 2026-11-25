@@ -2168,3 +2168,91 @@ fn mix_audio_track_plays_a_reversed_clip_backwards() {
     assert!(rms(&mixed[..half - margin]) < 0.01, "silence first");
     assert!(rms(&mixed[half + margin..]) > 0.05, "the tone at the end");
 }
+
+#[test]
+fn every_voice_effect_renders_and_the_chipmunk_raises_the_pitch() {
+    if vv_audio::stretch::skip_without_rubberband() {
+        return;
+    }
+    let dir = TempDir::new("vv-app-export-test");
+    let path = dir.join("voice_source.wav");
+    vv_media::test_support::ffmpeg(
+        &[
+            "-f",
+            "lavfi",
+            "-i",
+            "sine=frequency=300:sample_rate=48000:duration=2",
+        ],
+        &path,
+    );
+    let mut project = Project::default();
+    let media = project.media_pool.insert(vv_core::MediaItem {
+        path,
+        meta: vv_core::MediaMeta {
+            duration_frames: 50,
+            fps: vv_core::Rational::new(25, 1),
+            width: 0,
+            height: 0,
+            has_video: false,
+            has_audio: true,
+            sample_rate: 48_000,
+            channels: 1,
+            audio_streams: 1,
+            file: Default::default(),
+        },
+        content_hash: 1,
+        compound: None,
+        folder: None,
+    });
+    let render = |voice: Option<vv_core::VoiceEffect>| {
+        let mut clip = Clip::from_source_range(
+            ClipId(1),
+            ClipSource::Media(media),
+            0,
+            50,
+            0,
+            vv_core::Rational::one(),
+        );
+        clip.voice = voice;
+        let tl = timeline_with(vec![Track {
+            kind: TrackKind::Audio,
+            clips: vec![clip],
+            muted: false,
+            solo: false,
+            locked: false,
+            crossings: Vec::new(),
+            mix: Default::default(),
+            armed: Default::default(),
+            main: false,
+            subtitles: false,
+            effects: false,
+            dub: None,
+        }]);
+        mix_audio_track(&project, &tl, 0..50).unwrap()
+    };
+    let frequency = |mixed: &[f32]| {
+        let mono: Vec<f32> = mixed
+            .iter()
+            .step_by(PROJECT_CHANNELS as usize)
+            .copied()
+            .collect();
+        let window = &mono[24_000..72_000];
+        window
+            .windows(2)
+            .filter(|w| (w[0] < 0.0) != (w[1] < 0.0))
+            .count() as f64
+            / 2.0
+    };
+    let plain = render(None);
+    for voice in vv_core::VoiceEffect::ALL {
+        let changed = render(Some(voice));
+        assert_eq!(changed.len(), plain.len(), "{voice:?}");
+        assert!(
+            changed.iter().any(|s| s.abs() > 0.01),
+            "{voice:?} is silent"
+        );
+        assert!(changed != plain, "{voice:?} changes nothing");
+    }
+    let chipmunk = frequency(&render(Some(vv_core::VoiceEffect::Chipmunk)));
+    assert!((chipmunk - 480.0).abs() < 30.0, "{chipmunk} Hz");
+}

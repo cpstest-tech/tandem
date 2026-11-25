@@ -905,6 +905,14 @@ props.enhance:
   en: "Enhance"
   it: "Migliora"
 
+props.enhance_hint:
+  en: "Measures the frame under the playhead and sets brightness, contrast, saturation and sharpen; fine-tune them on the Adjust tab."
+  it: "Misura il fotogramma sotto la testina e imposta luminosità, contrasto, saturazione e nitidezza; puoi rifinirli nella tab Regola."
+
+props.enhance_apply:
+  en: "Enhance"
+  it: "Migliora"
+
 props.noise_reduction:
   en: "Noise reduction"
   it: "Riduzione rumore"
@@ -912,6 +920,30 @@ props.noise_reduction:
 props.voice_changer:
   en: "Voice changer"
   it: "Cambia voce"
+
+props.voice_chipmunk:
+  en: "Chipmunk"
+  it: "Scoiattolo"
+
+props.voice_deep:
+  en: "Deep"
+  it: "Profonda"
+
+props.voice_robot:
+  en: "Robot"
+  it: "Robot"
+
+props.voice_echo:
+  en: "Echo"
+  it: "Eco"
+
+props.voice_telephone:
+  en: "Telephone"
+  it: "Telefono"
+
+props.voice_megaphone:
+  en: "Megaphone"
+  it: "Megafono"
 
 props.fade_in:
   en: "Fade in"

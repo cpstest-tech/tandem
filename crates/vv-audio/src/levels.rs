@@ -176,6 +176,9 @@ fn input_clips_at(
             if clip.reversed {
                 body = stable_hash((body, "reversed"));
             }
+            if let Some(voice) = clip.voice {
+                body = stable_hash((body, voice));
+            }
             clips.push(InputClip {
                 track: track_index,
                 id: clip.id,

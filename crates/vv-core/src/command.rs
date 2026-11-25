@@ -87,6 +87,7 @@ pub enum CommandLabel {
     Stabilize,
     FreezeFrame,
     ReverseClips,
+    VoiceEffect,
     RemoveSilences,
     AutoCut,
     TextCut,
@@ -776,6 +777,56 @@ impl Command for SetClipsDisabled {
         for &(track_index, clip_id, old) in &self.old {
             if let Some(clip) = tl.clip_mut(track_index, clip_id) {
                 clip.disabled = old;
+            }
+        }
+    }
+}
+
+/// Sets (or clears) the voice changer of a set of clips.
+#[derive(Debug)]
+pub struct SetClipsVoice {
+    pub timeline: TimelineId,
+    pub clips: Vec<(usize, ClipId)>,
+    pub voice: Option<crate::model::VoiceEffect>,
+    old: Vec<(usize, ClipId, Option<crate::model::VoiceEffect>)>,
+}
+
+impl SetClipsVoice {
+    pub fn new(
+        timeline: TimelineId,
+        clips: Vec<(usize, ClipId)>,
+        voice: Option<crate::model::VoiceEffect>,
+    ) -> Self {
+        Self {
+            timeline,
+            clips,
+            voice,
+            old: Vec::new(),
+        }
+    }
+}
+
+impl Command for SetClipsVoice {
+    fn label(&self) -> CommandLabel {
+        CommandLabel::VoiceEffect
+    }
+
+    fn apply(&mut self, project: &mut Project) {
+        let tl = &mut project.timelines[self.timeline];
+        self.old.clear();
+        for &(track_index, clip_id) in &self.clips {
+            if let Some(clip) = tl.clip_mut(track_index, clip_id) {
+                self.old.push((track_index, clip_id, clip.voice));
+                clip.voice = self.voice;
+            }
+        }
+    }
+
+    fn undo(&self, project: &mut Project) {
+        let tl = &mut project.timelines[self.timeline];
+        for &(track_index, clip_id, old) in &self.old {
+            if let Some(clip) = tl.clip_mut(track_index, clip_id) {
+                clip.voice = old;
             }
         }
     }

@@ -807,6 +807,7 @@ fn clip_audio_failures<'a>(
             !clip.disabled
                 && !clip.is_silent()
                 && !clip.reversed
+                && clip.voice.is_none()
                 && !(clip.pitch_correction && !clip.speed().is_one())
         };
         for clip in audio_tracks.flat_map(|t| &t.clips).filter(reads_stream) {

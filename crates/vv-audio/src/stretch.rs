@@ -33,6 +33,23 @@ pub fn stretch_samples(
     Ok(out)
 }
 
+/// The libavfilter graph of a stretch at `tempo` with `voice` on top.
+fn filter_chain(tempo: f64, voice: Option<vv_core::VoiceEffect>) -> String {
+    let mut parts = Vec::new();
+    match voice.and_then(vv_core::VoiceEffect::pitch) {
+        Some(pitch) => parts.push(format!("rubberband=tempo={tempo}:pitch={pitch}")),
+        None if tempo != 1.0 || voice.is_none() => parts.push(format!("rubberband=tempo={tempo}")),
+        None => {}
+    }
+    if let Some(voice) = voice
+        && !voice.filters().is_empty()
+    {
+        parts.push(voice.filters().to_string());
+    }
+    parts.push(format!("aformat=sample_fmts={}", FORMAT.name()));
+    parts.join(",")
+}
+
 /// `stretch_samples` fed in pieces: the input never needs to be whole.
 pub struct Stretcher {
     graph: ffmpeg::filter::Graph,
@@ -74,6 +91,16 @@ pub fn skip_without_rubberband() -> bool {
 
 impl Stretcher {
     pub fn new(sample_rate: u32, channels: u16, tempo: f64) -> Result<Self, String> {
+        Self::with_voice(sample_rate, channels, tempo, None)
+    }
+
+    /// The stretch followed by a voice changer.
+    pub fn with_voice(
+        sample_rate: u32,
+        channels: u16,
+        tempo: f64,
+        voice: Option<vv_core::VoiceEffect>,
+    ) -> Result<Self, String> {
         if tempo.is_nan() || tempo <= 0.0 {
             return Err(format!("invalid stretch tempo: {tempo}"));
         }
@@ -105,12 +132,7 @@ impl Stretcher {
         graph
             .output("in", 0)
             .and_then(|p| p.input("out", 0))
-            .and_then(|p| {
-                p.parse(&format!(
-                    "rubberband=tempo={tempo},aformat=sample_fmts={}",
-                    FORMAT.name()
-                ))
-            })
+            .and_then(|p| p.parse(&filter_chain(tempo, voice)))
             .map_err(|e| e.to_string())?;
         graph.validate().map_err(|e| e.to_string())?;
         Ok(Self {

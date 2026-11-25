@@ -607,6 +607,53 @@ pub fn apply_adjust(rgb: [f32; 3], grade: &GradeValue, uv: [f32; 2]) -> [f32; 3]
     c.map(|v| v.clamp(0.0, 1.0))
 }
 
+/// `grade` with brightness, contrast, saturation and sharpen moved so the
+/// picture of `pixels` (RGB 0–1, measured with `grade` applied) fills the
+/// range with a mid-grey median: a one-click starting point.
+pub fn auto_enhance(grade: &GradeValue, pixels: impl Iterator<Item = [f32; 3]>) -> GradeValue {
+    let mut lumas = Vec::new();
+    let mut chroma = 0.0f64;
+    for p in pixels {
+        lumas.push(luma(p));
+        let max = p[0].max(p[1]).max(p[2]);
+        let min = p[0].min(p[1]).min(p[2]);
+        chroma += (max - min) as f64;
+    }
+    let mut out = *grade;
+    if lumas.len() < 16 {
+        return out;
+    }
+    let mean_chroma = (chroma / lumas.len() as f64) as f32;
+    lumas.sort_by(f32::total_cmp);
+    let at = |q: f32| lumas[((lumas.len() - 1) as f32 * q) as usize];
+    let (low, median, high) = (at(0.01), at(0.5), at(0.99));
+    let add = |out: &mut GradeValue, p: GradeParam, delta: f32| {
+        let range = p.range();
+        out.set(p, (out.get(p) + delta).clamp(*range.start(), *range.end()));
+    };
+    // Gamma that takes the median to 0.45: brightness b is a gamma of 2^-b.
+    if median > 0.02 && median < 0.98 {
+        let gamma = 0.45f32.ln() / median.ln();
+        add(
+            &mut out,
+            GradeParam::Brightness,
+            (-gamma.log2()).clamp(-0.5, 0.5),
+        );
+    }
+    let spread = (high - low).max(0.05);
+    add(
+        &mut out,
+        GradeParam::Contrast,
+        (0.9 / spread - 1.0).clamp(0.0, 0.4),
+    );
+    if mean_chroma < 0.25 {
+        let saturation = out.get(GradeParam::Saturation);
+        out.set(GradeParam::Saturation, (saturation * 1.15).min(2.0));
+    }
+    add(&mut out, GradeParam::Sharpen, 0.25);
+    out
+}
+
 /// RGB shift of a wheel's puck at the edge of the disc, and of its
 /// luminance slider at the end of its travel.
 pub const WHEEL_CHROMA_STRENGTH: f32 = 0.2;

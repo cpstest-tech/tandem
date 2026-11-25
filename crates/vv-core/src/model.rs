@@ -1287,6 +1287,52 @@ impl Lerp for BlurDirection {
     }
 }
 
+/// The voice changer of an audio clip.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum VoiceEffect {
+    Chipmunk,
+    Deep,
+    Robot,
+    Echo,
+    Telephone,
+    Megaphone,
+}
+
+impl VoiceEffect {
+    pub const ALL: [Self; 6] = [
+        Self::Chipmunk,
+        Self::Deep,
+        Self::Robot,
+        Self::Echo,
+        Self::Telephone,
+        Self::Megaphone,
+    ];
+
+    /// Pitch ratio, for the presets that change it.
+    pub fn pitch(self) -> Option<f64> {
+        match self {
+            Self::Chipmunk => Some(1.6),
+            Self::Deep => Some(0.7),
+            _ => None,
+        }
+    }
+
+    /// The libavfilter chain after the pitch shift, if any.
+    pub fn filters(self) -> &'static str {
+        match self {
+            Self::Chipmunk | Self::Deep => "",
+            Self::Robot => {
+                "afftfilt=real='hypot(re,im)*cos(0)':imag='hypot(re,im)*sin(0)':win_size=512:overlap=0.75"
+            }
+            Self::Echo => "aecho=0.8:0.85:120|240:0.45|0.3",
+            Self::Telephone => "highpass=f=300,lowpass=f=3400,volume=1.6",
+            Self::Megaphone => {
+                "highpass=f=600,lowpass=f=3000,acrusher=bits=10:mode=log:aa=1,volume=1.8"
+            }
+        }
+    }
+}
+
 /// A filter applied to a clip. The order in the `Vec` of
 /// `EffectStack::filters` is the order of application, configurable
 /// by the user (several filters on the same clip, in a sequence they choose);
@@ -2133,6 +2179,9 @@ pub struct Clip {
     /// Keyframes keep running forward in timeline time.
     #[serde(default)]
     pub reversed: bool,
+    /// Voice changer, rendered with the clip's audio.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub voice: Option<VoiceEffect>,
     /// Speed ramp over the clip's length; see `crate::speed_curve`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub speed_curve: Option<crate::speed_curve::SpeedCurve>,
@@ -2191,6 +2240,7 @@ impl Clip {
             pitch_correction: pitch_correction_default(),
             freeze: None,
             reversed: false,
+            voice: None,
             speed_curve: None,
             disabled: false,
             fade_in: 0,

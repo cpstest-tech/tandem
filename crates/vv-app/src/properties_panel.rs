@@ -2808,7 +2808,7 @@ impl VenturiApp {
                                                 (_, properties_tabs::VideoSubTab::RemoveBackground) => {
                                                     self.show_remove_background_tab(ui, targets, &info.filters, &mut pending_effects)
                                                 }
-                                                (_, properties_tabs::VideoSubTab::Retouch) => properties_tabs::retouch_tab(ui),
+                                                (_, properties_tabs::VideoSubTab::Retouch) => self.show_retouch_tab(ui, targets, &mut pending_effects),
                                                 (_, properties_tabs::VideoSubTab::AutoZoom) => self.show_auto_zoom_tab(ui, &primary),
                                                 (_, properties_tabs::VideoSubTab::Reframe) => self.show_reframe_tab(ui, &primary),
                                                 _ => {}
@@ -2873,7 +2873,7 @@ impl VenturiApp {
                                             }
                                             self.show_fade_rows(ui, targets, &mut pending_effects);
                                             self.show_audio_cleanup(ui, targets, &mut pending_effects);
-                                            properties_tabs::audio_placeholders(ui);
+                                            self.show_voice_section(ui, targets, &mut pending_effects);
                                         }
                                     }
                                 }
