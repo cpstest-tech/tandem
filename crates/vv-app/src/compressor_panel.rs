@@ -285,9 +285,9 @@ pub(crate) fn show(
         state,
         presets,
     );
-    ui.add_space(6.0);
+    ui.add_space(crate::theme::SPACE_2);
     changed |= graph(ui, &mut params, activity, &state.spectrum);
-    ui.add_space(8.0);
+    ui.add_space(crate::theme::SPACE_2);
     ui.horizontal_top(|ui| {
         for band in 0..3 {
             changed |= band_strip(ui, band, &mut params, activity);
@@ -473,7 +473,7 @@ fn graph(
     paint_spectrum(&painter, rect, spectrum);
 
     let (grid, label) = (GRID_COLOR, LABEL_COLOR);
-    let font = egui::FontId::proportional(9.0);
+    let font = egui::FontId::proportional(crate::theme::FONT_TINY);
     for db in (DB_BOTTOM as i32..=DB_TOP as i32).step_by(6) {
         let y = y_of(db as f32);
         let stroke = if db == 0 {
@@ -574,7 +574,7 @@ fn graph(
                 egui::pos2(x + 8.0, rect.top() + 2.0),
                 egui::Align2::LEFT_TOP,
                 format!("{} Hz", params.crossovers_hz[k].round()),
-                egui::FontId::proportional(11.0),
+                egui::FontId::proportional(crate::theme::FONT_SMALL),
                 egui::Color32::WHITE,
             );
         }
@@ -594,7 +594,7 @@ fn graph(
                 spot + egui::vec2(10.0, -10.0),
                 egui::Align2::LEFT_BOTTOM,
                 format!("{:+.1} dB", params.bands[band].makeup_db),
-                egui::FontId::proportional(11.0),
+                egui::FontId::proportional(crate::theme::FONT_SMALL),
                 egui::Color32::WHITE,
             );
         }
@@ -667,7 +667,7 @@ pub(crate) fn paint_spectrum_scale(painter: &egui::Painter, rect: egui::Rect) {
             egui::pos2(rect.left() + 4.0, spectrum_y(rect, db) - 1.0),
             egui::Align2::LEFT_BOTTOM,
             format!("{db}"),
-            egui::FontId::proportional(9.0),
+            egui::FontId::proportional(crate::theme::FONT_TINY),
             egui::Color32::from_gray(80),
         );
     }
@@ -682,7 +682,7 @@ pub(crate) fn paint_freq_grid(painter: &egui::Painter, rect: egui::Rect) {
             egui::pos2(x, rect.bottom() - 3.0),
             egui::Align2::CENTER_BOTTOM,
             format_freq(freq),
-            egui::FontId::proportional(9.0),
+            egui::FontId::proportional(crate::theme::FONT_TINY),
             LABEL_COLOR,
         );
     }
@@ -733,7 +733,7 @@ fn band_strip(
                             }
                         });
                     });
-                    ui.add_space(4.0);
+                    ui.add_space(crate::theme::SPACE_1);
                     ui.horizontal_top(|ui| {
                         let column = egui::vec2(FADER_COLUMN_WIDTH, 0.0);
                         let layout = egui::Layout::top_down(egui::Align::Center);
@@ -779,7 +779,7 @@ fn band_strip(
                                     (0.1, 1, " dB"),
                                 );
                             });
-                            ui.add_space(6.0);
+                            ui.add_space(crate::theme::SPACE_2);
                             ui.horizontal_top(|ui| {
                                 changed |= param_knob(
                                     ui,
@@ -922,7 +922,7 @@ fn threshold_fader(
 
     let painter = ui.painter();
     let weak = ui.visuals().weak_text_color();
-    let font = egui::FontId::proportional(9.0);
+    let font = egui::FontId::proportional(crate::theme::FONT_TINY);
     let groove_x = rect.left() + SCALE_WIDTH + GROOVE_WIDTH / 2.0;
     for db in [0.0, -12.0, -24.0, -36.0, -48.0, -60.0] {
         let y = y_of(db);
@@ -961,7 +961,7 @@ fn threshold_fader(
             egui::pos2(level_bar.left(), level_y.max(threshold_y)),
             level_bar.right_bottom(),
         );
-        painter.rect_filled(under, 0.0, egui::Color32::from_rgb(60, 200, 90));
+        painter.rect_filled(under, 0.0, crate::theme::SUCCESS);
         if level_y < threshold_y {
             let over = egui::Rect::from_x_y_ranges(level_bar.x_range(), level_y..=threshold_y);
             painter.rect_filled(over, 0.0, crate::theme::ACCENT);

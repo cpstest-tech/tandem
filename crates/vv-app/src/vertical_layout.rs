@@ -208,14 +208,10 @@ impl crate::VenturiApp {
                         LayoutMode::Vertical => t!("layout.propose_vertical"),
                         LayoutMode::Desktop => t!("layout.propose_desktop"),
                     });
-                    let switch = egui::Button::new(
-                        egui::RichText::new(match proposed {
-                            LayoutMode::Vertical => t!("layout.switch_vertical"),
-                            LayoutMode::Desktop => t!("layout.switch_desktop"),
-                        })
-                        .color(theme::ON_ACCENT),
-                    )
-                    .fill(theme::ACCENT_FILL);
+                    let switch = crate::ui_kit::primary_button(match proposed {
+                        LayoutMode::Vertical => t!("layout.switch_vertical"),
+                        LayoutMode::Desktop => t!("layout.switch_desktop"),
+                    });
                     if ui.add(switch).clicked() {
                         choice = Some(Some(proposed));
                     }

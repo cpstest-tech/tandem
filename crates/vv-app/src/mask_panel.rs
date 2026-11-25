@@ -87,7 +87,7 @@ pub(crate) fn masks_section(
 ) -> MaskSectionResponse {
     let mut response = MaskSectionResponse::default();
     let mut new = masks.to_vec();
-    ui.add_space(6.0);
+    ui.add_space(crate::theme::SPACE_2);
     let (open, reset_all) = section_header(ui, &t!("props.masks"), !masks.is_empty());
     if reset_all {
         new.clear();
@@ -112,7 +112,7 @@ pub(crate) fn masks_section(
         let mut swap = None;
         for (index, mask) in masks.iter().enumerate() {
             let own = &mut new[index];
-            ui.add_space(4.0);
+            ui.add_space(crate::theme::SPACE_1);
             ui.horizontal(|ui| {
                 let mut enabled = own.enabled;
                 if toggle_switch(ui, &mut enabled).changed() {

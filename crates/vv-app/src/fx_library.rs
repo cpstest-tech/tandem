@@ -907,7 +907,7 @@ impl VenturiApp {
         if before.is_empty() {
             return;
         }
-        ui.add_space(6.0);
+        ui.add_space(crate::theme::SPACE_2);
         let (open, reset_all) =
             crate::properties_panel::section_header(ui, &t!("fx.props_title"), true);
         let library = assets::library();
@@ -954,7 +954,7 @@ impl VenturiApp {
                     }
                 });
             }
-            ui.add_space(4.0);
+            ui.add_space(crate::theme::SPACE_1);
         }
         if let Some(index) = remove {
             after.remove(index);

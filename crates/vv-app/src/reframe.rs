@@ -130,7 +130,7 @@ impl VenturiApp {
             // Something else was edited: the previewed step stays as applied.
             self.reframe.preview = None;
         }
-        ui.add_space(6.0);
+        ui.add_space(crate::theme::SPACE_2);
         let (open, _) = section_header(ui, &t!("reframe.title"), false);
         if !open {
             return;
@@ -232,12 +232,7 @@ impl VenturiApp {
                 }
                 ui.horizontal(|ui| {
                     if ui
-                        .add(
-                            egui::Button::new(
-                                egui::RichText::new(t!("reframe.apply")).color(theme::ON_ACCENT),
-                            )
-                            .fill(theme::ACCENT_FILL),
-                        )
+                        .add(crate::ui_kit::primary_button(t!("reframe.apply")))
                         .clicked()
                     {
                         self.reframe.preview = None;

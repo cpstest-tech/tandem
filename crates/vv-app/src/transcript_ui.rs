@@ -219,10 +219,7 @@ impl VenturiApp {
         }
         let selected = self.transcript.selection.len();
         ui.horizontal_wrapped(|ui| {
-            let cut = egui::Button::new(
-                egui::RichText::new(t!("transcript.cut", count = selected)).color(theme::ON_ACCENT),
-            )
-            .fill(theme::ACCENT_FILL);
+            let cut = crate::ui_kit::primary_button(t!("transcript.cut", count = selected));
             if ui
                 .add_enabled(selected > 0, cut)
                 .on_hover_text(t!("transcript.cut_hint"))

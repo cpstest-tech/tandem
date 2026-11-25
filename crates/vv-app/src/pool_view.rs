@@ -593,7 +593,7 @@ fn folder_row<I: PoolId, F: PoolId, M: PoolMenus<I, F>>(
                     text_rect.left_center(),
                     egui::Align2::LEFT_CENTER,
                     &folder.name,
-                    egui::FontId::proportional(14.0),
+                    egui::FontId::proportional(crate::theme::FONT_BODY),
                     color,
                 );
         }
@@ -817,7 +817,7 @@ fn paint_kind_icon<I, F>(ui: &mut egui::Ui, entry: &PoolEntry<I, F>) {
                 rect.center(),
                 egui::Align2::CENTER_CENTER,
                 "🔊",
-                egui::FontId::proportional(11.0),
+                egui::FontId::proportional(crate::theme::FONT_SMALL),
                 color,
             );
         }
@@ -1308,7 +1308,7 @@ fn proxy_badge(ui: &mut egui::Ui, proxy: Option<proxy_worker::ProxyState>) {
             media_pool_ui::proxy_progress_ring(ui, None).on_hover_text(t!("pool.proxy_queued"));
         }
         Some(proxy_worker::ProxyState::Failed) => {
-            ui.colored_label(egui::Color32::RED, "!")
+            ui.colored_label(crate::theme::ERROR, "!")
                 .on_hover_text(t!("pool.proxy_failed"));
         }
         _ => {}
@@ -1356,7 +1356,7 @@ fn pool_header<I: PoolId, F: PoolId>(ui: &mut egui::Ui, state: &mut PoolState<I,
             cell.left_center() + egui::vec2(6.0, 0.0),
             egui::Align2::LEFT_CENTER,
             label,
-            egui::FontId::proportional(13.0),
+            egui::FontId::proportional(crate::theme::FONT_SECTION),
             text_color,
         );
         if active {

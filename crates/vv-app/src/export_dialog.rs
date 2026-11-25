@@ -171,11 +171,15 @@ impl ExportDialog {
         });
         match validate_path(&self.path_text) {
             Ok(path) if path.exists() => {
-                ui.colored_label(egui::Color32::YELLOW, t!("export.overwrite_warning"));
+                crate::ui_kit::status(
+                    ui,
+                    crate::ui_kit::Tone::Warning,
+                    t!("export.overwrite_warning"),
+                );
             }
             Ok(_) => {}
             Err(e) => {
-                ui.colored_label(egui::Color32::RED, e);
+                crate::ui_kit::status(ui, crate::ui_kit::Tone::Error, e);
             }
         }
     }
@@ -505,7 +509,7 @@ impl ExportDialog {
         let valid_size = self.settings.valid_output_size(info.resolution);
         if !valid_size {
             ui.colored_label(
-                egui::Color32::RED,
+                crate::theme::ERROR,
                 t!(
                     "export.error_dimensions",
                     min = ExportSettings::MIN_DIMENSION

@@ -22,6 +22,8 @@ pub(crate) const BORDER_SUBTLE: Color32 = Color32::from_rgb(0x2c, 0x2c, 0x2c);
 // Text.
 pub(crate) const TEXT_PRIMARY: Color32 = Color32::from_rgb(0xf0, 0xf0, 0xf0);
 pub(crate) const TEXT_SECONDARY: Color32 = Color32::from_rgb(0x9a, 0x9a, 0x9a);
+/// Tertiary text (`.weak()`): metadata under a title, hints.
+pub(crate) const TEXT_WEAK: Color32 = Color32::from_rgb(0x76, 0x76, 0x76);
 pub(crate) const TEXT_DISABLED: Color32 = Color32::from_rgb(0x5c, 0x5c, 0x5c);
 
 // Accent (cyan): active state, selection, primary action.
@@ -67,10 +69,15 @@ pub(crate) const RADIUS_PANEL: f32 = 6.0;
 pub(crate) const RADIUS_MODAL: f32 = 8.0;
 
 // Type sizes (px) and control heights.
+/// Axis and scale labels inside graphs and meters.
+pub(crate) const FONT_TINY: f32 = 10.0;
 pub(crate) const FONT_SMALL: f32 = 11.0;
 pub(crate) const FONT_BODY: f32 = 12.0;
 pub(crate) const FONT_SECTION: f32 = 13.0;
 pub(crate) const FONT_MODAL_TITLE: f32 = 14.0;
+pub(crate) const FONT_LARGE: f32 = 16.0;
+/// Banners and full-panel notices.
+pub(crate) const FONT_DISPLAY: f32 = 20.0;
 pub(crate) const CONTROL_HEIGHT: f32 = 24.0;
 pub(crate) const FIELD_HEIGHT: f32 = 28.0;
 pub(crate) const ICON_SIZE: f32 = 16.0;
@@ -144,7 +151,9 @@ pub(crate) fn apply(ctx: &egui::Context) {
     for theme in [egui::Theme::Dark, egui::Theme::Light] {
         ctx.style_mut_of(theme, |style| {
             set_spacing(style, false);
-            style.spacing.window_margin = egui::Margin::same(PANEL_PADDING as i8);
+            style.spacing.window_margin = egui::Margin::same(SPACE_4 as i8);
+            style.spacing.menu_margin = egui::Margin::same(SPACE_1 as i8 + 2);
+            style.spacing.scroll = egui::style::ScrollStyle::thin();
             style
                 .text_styles
                 .insert(TextStyle::Body, FontId::proportional(FONT_BODY));
@@ -156,7 +165,7 @@ pub(crate) fn apply(ctx: &egui::Context) {
                 .insert(TextStyle::Small, FontId::proportional(FONT_SMALL));
             style
                 .text_styles
-                .insert(TextStyle::Heading, FontId::proportional(FONT_SECTION));
+                .insert(TextStyle::Heading, FontId::proportional(FONT_MODAL_TITLE));
 
             let v = &mut style.visuals;
             v.dark_mode = true;
@@ -168,6 +177,10 @@ pub(crate) fn apply(ctx: &egui::Context) {
             v.window_shadow = menu_shadow();
             v.popup_shadow = menu_shadow();
             v.extreme_bg_color = BG_INSET;
+            // Fields sit on bg-raised like every other control; inset made them vanish on panels.
+            v.text_edit_bg_color = Some(BG_RAISED);
+            v.weak_text_color = Some(TEXT_WEAK);
+            v.slider_trailing_fill = true;
             v.faint_bg_color = BG_INSET;
             v.code_bg_color = BG_RAISED;
             v.hyperlink_color = ACCENT;

@@ -45,7 +45,7 @@ pub(crate) fn paint(ui: &egui::Ui, rect: egui::Rect, preview: &AudioPreview) {
                     lane.center(),
                     egui::Align2::CENTER_CENTER,
                     t!("viewer.decoding"),
-                    egui::FontId::proportional(14.0),
+                    egui::FontId::proportional(crate::theme::FONT_BODY),
                     ui.visuals().weak_text_color(),
                 );
             }

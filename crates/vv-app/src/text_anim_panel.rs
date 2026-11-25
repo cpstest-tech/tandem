@@ -310,7 +310,7 @@ pub(crate) fn show(
         shown.anim = trial;
     }
     preview(ui, &shown, timeline_size);
-    ui.add_space(6.0);
+    ui.add_space(crate::theme::SPACE_2);
 
     let mut hovered = None;
     let mut changed = false;

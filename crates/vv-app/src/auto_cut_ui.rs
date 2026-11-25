@@ -96,11 +96,7 @@ impl VenturiApp {
                     .frame(egui::Frame::NONE)
                     .show(ui, |ui| {
                         ui.horizontal(|ui| {
-                            ui.label(
-                                egui::RichText::new(t!("auto_cut.title"))
-                                    .size(theme::FONT_MODAL_TITLE)
-                                    .strong(),
-                            );
+                            crate::ui_kit::heading(ui, t!("auto_cut.title"));
                             ui.with_layout(
                                 egui::Layout::right_to_left(egui::Align::Center),
                                 |ui| {
@@ -166,11 +162,7 @@ impl VenturiApp {
                                     apply |= ui
                                         .add_enabled(
                                             enabled,
-                                            egui::Button::new(
-                                                egui::RichText::new(t!("auto_cut.delete"))
-                                                    .color(theme::ON_ACCENT),
-                                            )
-                                            .fill(theme::ACCENT_FILL),
+                                            crate::ui_kit::primary_button(t!("auto_cut.delete")),
                                         )
                                         .clicked();
                                     close |= ui.button(t!("common.cancel")).clicked();

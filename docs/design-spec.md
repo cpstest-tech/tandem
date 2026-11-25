@@ -241,3 +241,18 @@ not the assets.
 
 Every new piece of UI uses only the tokens from `theme.rs` and follows this
 document. No colour, radius, spacing or font size is hardcoded elsewhere.
+Illustrations (thumbnail art, EQ band colours) are the only exception.
+
+Shared pieces live in `crates/vv-app/src/ui_kit.rs`; use them instead of
+rebuilding the look by hand:
+
+- `heading` for dialog and page titles (14 px, primary text);
+- `section_title` for groups of controls (13 px, primary text);
+- `hint` for secondary lines (11 px, secondary text);
+- `primary_button` for the one solid-cyan action of a view (Export, Apply…);
+- `status` with `Tone::{Error, Warning, Success}` for messages.
+
+Spacing uses the `SPACE_*` scale only (4, 8, 12, 16, 24); text sizes use
+`FONT_TINY` (graph labels), `FONT_SMALL`, `FONT_BODY`, `FONT_SECTION`,
+`FONT_MODAL_TITLE`, `FONT_LARGE` and `FONT_DISPLAY` (banners, full-panel
+notices).

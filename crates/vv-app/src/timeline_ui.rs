@@ -1197,7 +1197,7 @@ fn draw_track_headers(
         ),
         egui::Align2::CENTER_CENTER,
         format_timecode(playhead_secs, fps),
-        egui::FontId::monospace(14.0),
+        egui::FontId::monospace(crate::theme::FONT_BODY),
         egui::Color32::WHITE,
     );
 
@@ -1289,7 +1289,7 @@ fn draw_track_headers(
             row_rect.left_top() + egui::vec2(28.0, 11.0),
             egui::Align2::LEFT_CENTER,
             label,
-            egui::FontId::proportional(11.0),
+            egui::FontId::proportional(crate::theme::FONT_SMALL),
             text_color,
         );
 
@@ -1677,7 +1677,7 @@ fn draw_ruler_ticks(
             egui::pos2(x + 3.0, origin.y + 2.0),
             egui::Align2::LEFT_TOP,
             format_timecode(secs, fps),
-            egui::FontId::proportional(10.0),
+            egui::FontId::proportional(crate::theme::FONT_SMALL),
             label_color,
         );
     }
@@ -4506,7 +4506,7 @@ pub fn show_timeline(
                         );
                         let label = painter.layout_no_wrap(
                             "REC".to_owned(),
-                            egui::FontId::proportional(10.0),
+                            egui::FontId::proportional(crate::theme::FONT_TINY),
                             egui::Color32::WHITE,
                         );
                         let badge = egui::Rect::from_min_size(
@@ -4529,7 +4529,7 @@ pub fn show_timeline(
                         ),
                         egui::Align2::CENTER_CENTER,
                         t!("timeline.empty_hint"),
-                        egui::FontId::proportional(14.0),
+                        egui::FontId::proportional(crate::theme::FONT_BODY),
                         egui::Color32::from_white_alpha(80),
                     );
                 }
@@ -5042,8 +5042,11 @@ fn paint_pointer_overlay(ctx: &egui::Context, pos: egui::Pos2, text: String) {
         egui::Id::new("timeline_duration_overlay"),
     ));
     let text_pos = pos + egui::vec2(12.0, 14.0);
-    let galley =
-        painter.layout_no_wrap(text, egui::FontId::proportional(12.0), egui::Color32::WHITE);
+    let galley = painter.layout_no_wrap(
+        text,
+        egui::FontId::proportional(crate::theme::FONT_BODY),
+        egui::Color32::WHITE,
+    );
     let bg = egui::Rect::from_min_size(text_pos, galley.size()).expand(3.0);
     painter.rect_filled(bg, 3.0, egui::Color32::from_black_alpha(200));
     painter.galley(text_pos, galley, egui::Color32::WHITE);
@@ -5141,7 +5144,7 @@ fn retime_bar(
     let height = retime_bar_height(clip_rect);
     let bar = egui::Rect::from_min_size(clip_rect.min, egui::vec2(clip_rect.width(), height));
     painter.rect_filled(bar, 2.0, crate::theme::ACCENT_FILL);
-    let font = egui::FontId::proportional(11.0);
+    let font = egui::FontId::proportional(crate::theme::FONT_SMALL);
     let galley = painter.layout_no_wrap(
         format!("{} ⏷", format_speed(speed)),
         font.clone(),
@@ -6503,7 +6506,7 @@ fn paint_ai_placeholder(
         rect.left_center() + egui::vec2(8.0, 0.0),
         egui::Align2::LEFT_CENTER,
         text,
-        egui::FontId::proportional(12.0),
+        egui::FontId::proportional(crate::theme::FONT_BODY),
         egui::Color32::WHITE,
     );
 }
@@ -8104,7 +8107,7 @@ fn paint_retime_cursor(painter: &egui::Painter, pos: egui::Pos2) {
             label + offset,
             egui::Align2::CENTER_BOTTOM,
             "%",
-            egui::FontId::proportional(11.0),
+            egui::FontId::proportional(crate::theme::FONT_SMALL),
             egui::Color32::BLACK,
         );
     }
@@ -8112,7 +8115,7 @@ fn paint_retime_cursor(painter: &egui::Painter, pos: egui::Pos2) {
         label,
         egui::Align2::CENTER_BOTTOM,
         "%",
-        egui::FontId::proportional(11.0),
+        egui::FontId::proportional(crate::theme::FONT_SMALL),
         egui::Color32::WHITE,
     );
 }
@@ -8197,7 +8200,7 @@ fn paint_drop_zone(painter: &egui::Painter, rect: egui::Rect, label: Option<&str
             rect.center(),
             egui::Align2::CENTER_CENTER,
             label,
-            egui::FontId::proportional(13.0),
+            egui::FontId::proportional(crate::theme::FONT_SECTION),
             egui::Color32::from_rgb(200, 255, 200),
         );
     }

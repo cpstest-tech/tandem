@@ -366,7 +366,7 @@ fn shortcut_field(ui: &mut egui::Ui, dialog: &mut PresetDialog) {
         }
     });
     if let Some(notice) = &dialog.notice {
-        ui.colored_label(egui::Color32::YELLOW, notice);
+        crate::ui_kit::status(ui, crate::ui_kit::Tone::Warning, notice);
     }
 }
 
@@ -410,7 +410,7 @@ fn preset_item(ui: &mut egui::Ui, id: &str, preset: &AttributePreset) -> egui::R
         egui::pos2(thumb.right() + 14.0, rect.center().y),
         egui::Align2::LEFT_CENTER,
         &preset.name,
-        egui::FontId::proportional(13.0),
+        egui::FontId::proportional(crate::theme::FONT_SECTION),
         visuals.text_color(),
     );
     if let Some(shortcut) = preset.shortcut {
@@ -418,7 +418,7 @@ fn preset_item(ui: &mut egui::Ui, id: &str, preset: &AttributePreset) -> egui::R
             rect.right_center() - egui::vec2(8.0, 0.0),
             egui::Align2::RIGHT_CENTER,
             shortcut.to_string(),
-            egui::FontId::monospace(12.0),
+            egui::FontId::monospace(crate::theme::FONT_BODY),
             visuals.weak_text_color(),
         );
     }

@@ -72,7 +72,7 @@ impl VenturiApp {
                 .is_some_and(|m| m.meta.has_video),
             _ => false,
         };
-        ui.add_space(6.0);
+        ui.add_space(crate::theme::SPACE_2);
         let (open, _) = section_header(ui, &t!("auto_zoom.title"), false);
         if !open {
             return;
@@ -232,12 +232,7 @@ impl VenturiApp {
                 }
                 ui.horizontal(|ui| {
                     if ui
-                        .add(
-                            egui::Button::new(
-                                egui::RichText::new(t!("auto_zoom.apply")).color(theme::ON_ACCENT),
-                            )
-                            .fill(theme::ACCENT_FILL),
-                        )
+                        .add(crate::ui_kit::primary_button(t!("auto_zoom.apply")))
                         .clicked()
                     {
                         self.auto_zoom.preview = None;

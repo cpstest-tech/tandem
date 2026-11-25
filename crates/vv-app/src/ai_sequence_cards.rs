@@ -11,7 +11,7 @@ pub(crate) fn section_title(ui: &mut egui::Ui, number: &str, text: &str) {
     ui.add_space(theme::SPACE_2);
     ui.horizontal_wrapped(|ui| {
         ui.label(egui::RichText::new(number).color(theme::ACCENT).strong());
-        ui.label(egui::RichText::new(text).strong().size(theme::FONT_SECTION));
+        ui.label(crate::ui_kit::section_title(text));
     });
 }
 
@@ -645,7 +645,7 @@ fn paint_glyph(painter: &Painter, center: Pos2, glyph: &Glyph, color: Color32) {
                 center,
                 egui::Align2::CENTER_CENTER,
                 "Aa",
-                egui::FontId::proportional(11.0),
+                egui::FontId::proportional(crate::theme::FONT_SMALL),
                 color,
             );
         }

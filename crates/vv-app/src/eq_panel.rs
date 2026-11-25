@@ -138,10 +138,10 @@ pub(crate) fn show(
     let mut params = params.clone();
     let builtin = builtin_presets();
     let mut changed = preset_bar(ui, "eq_preset", &mut params, &builtin, state, presets);
-    ui.add_space(6.0);
+    ui.add_space(crate::theme::SPACE_2);
     changed |= graph(ui, &mut params, state);
     ui.weak(t!("mixer.eq_graph_hint"));
-    ui.add_space(6.0);
+    ui.add_space(crate::theme::SPACE_2);
     ui.horizontal_top(|ui| {
         for (index, band) in params.bands.iter_mut().enumerate().take(BANDS) {
             changed |= band_strip(ui, index, band);
@@ -213,7 +213,7 @@ fn graph(ui: &mut egui::Ui, params: &mut Equalizer, state: &EffectPanelState) ->
     let painter = ui.painter_at(rect);
     painter.rect_filled(rect, 4.0, egui::Color32::from_gray(14));
     paint_spectrum(&painter, rect, &state.spectrum);
-    let font = egui::FontId::proportional(9.0);
+    let font = egui::FontId::proportional(crate::theme::FONT_TINY);
     for db in (-24..=24).step_by(6) {
         let y = y_of(db as f32);
         let gray = if db == 0 { 70 } else { 40 };
@@ -309,7 +309,7 @@ fn graph(ui: &mut egui::Ui, params: &mut Equalizer, state: &EffectPanelState) ->
             spot,
             egui::Align2::CENTER_CENTER,
             (index + 1).to_string(),
-            egui::FontId::proportional(8.0),
+            egui::FontId::proportional(crate::theme::FONT_TINY),
             egui::Color32::from_gray(if band.enabled { 10 } else { 140 }),
         );
         if lit {
@@ -334,7 +334,7 @@ fn graph(ui: &mut egui::Ui, params: &mut Equalizer, state: &EffectPanelState) ->
                 spot + offset,
                 align,
                 text,
-                egui::FontId::proportional(11.0),
+                egui::FontId::proportional(crate::theme::FONT_SMALL),
                 egui::Color32::WHITE,
             );
         }
@@ -400,7 +400,7 @@ fn band_strip(ui: &mut egui::Ui, index: usize, band: &mut EqBand) -> bool {
                                 }
                             }
                         });
-                    ui.add_space(4.0);
+                    ui.add_space(crate::theme::SPACE_1);
                     ui.add_enabled_ui(band.enabled, |ui| {
                         let default = Equalizer::DEFAULT.bands[index];
                         changed |= param_knob(
@@ -427,7 +427,7 @@ fn band_strip(ui: &mut egui::Ui, index: usize, band: &mut EqBand) -> bool {
                             (0.01, 2, ""),
                         );
                     });
-                    ui.add_space(4.0);
+                    ui.add_space(crate::theme::SPACE_1);
                     let reset = ui
                         .add_sized(
                             egui::vec2(KNOB_CELL_WIDTH, 0.0),

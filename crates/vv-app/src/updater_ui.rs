@@ -215,7 +215,7 @@ fn dialog_body(ui: &mut egui::Ui, dialog: &mut Dialog) -> Option<Choice> {
     let mut choice = None;
     match dialog {
         Dialog::Offer(release, method) => {
-            ui.heading(t!("update.available_title"));
+            crate::ui_kit::heading(ui, t!("update.available_title"));
             ui.label(t!(
                 "update.available",
                 version = release.tag_name.trim_start_matches('v'),
@@ -225,7 +225,7 @@ fn dialog_body(ui: &mut egui::Ui, dialog: &mut Dialog) -> Option<Choice> {
             if method.asset(release).is_none() {
                 ui.label(egui::RichText::new(t!("update.manual_hint")).weak());
             }
-            ui.add_space(8.0);
+            ui.add_space(crate::theme::SPACE_2);
             ui.horizontal(|ui| {
                 if ui.button(t!("update.yes")).clicked() {
                     choice = Some(Choice::Update);
@@ -244,10 +244,13 @@ fn dialog_body(ui: &mut egui::Ui, dialog: &mut Dialog) -> Option<Choice> {
             progress,
             ..
         } => {
-            ui.heading(t!(
-                "update.downloading",
-                version = release.tag_name.trim_start_matches('v')
-            ));
+            crate::ui_kit::heading(
+                ui,
+                t!(
+                    "update.downloading",
+                    version = release.tag_name.trim_start_matches('v')
+                ),
+            );
             let done = progress.done.load(Ordering::Relaxed);
             ui.add(
                 egui::ProgressBar::new(done as f32 / (*size).max(1) as f32)
@@ -258,7 +261,7 @@ fn dialog_body(ui: &mut egui::Ui, dialog: &mut Dialog) -> Option<Choice> {
                         *size as f64 / 1e6
                     )),
             );
-            ui.add_space(8.0);
+            ui.add_space(crate::theme::SPACE_2);
             let cancelling = progress.cancel.load(Ordering::Relaxed);
             if ui
                 .add_enabled(!cancelling, egui::Button::new(t!("common.cancel")))
@@ -268,7 +271,7 @@ fn dialog_body(ui: &mut egui::Ui, dialog: &mut Dialog) -> Option<Choice> {
             }
         }
         Dialog::Ready(installed) => {
-            ui.heading(t!("update.ready_title"));
+            crate::ui_kit::heading(ui, t!("update.ready_title"));
             match installed {
                 Installed::Replaced(_) => {
                     ui.label(t!("update.ready_restart"));
@@ -280,7 +283,7 @@ fn dialog_body(ui: &mut egui::Ui, dialog: &mut Dialog) -> Option<Choice> {
                     ui.label(t!("update.ready_dmg"));
                 }
             }
-            ui.add_space(8.0);
+            ui.add_space(crate::theme::SPACE_2);
             ui.horizontal(|ui| {
                 if matches!(installed, Installed::DiskImage) {
                     if ui.button(t!("update.ok")).clicked() {
@@ -297,9 +300,9 @@ fn dialog_body(ui: &mut egui::Ui, dialog: &mut Dialog) -> Option<Choice> {
             });
         }
         Dialog::Failed { release, error } => {
-            ui.heading(t!("update.failed_title"));
+            crate::ui_kit::heading(ui, t!("update.failed_title"));
             ui.label(t!("update.failed", error = error.as_str()));
-            ui.add_space(8.0);
+            ui.add_space(crate::theme::SPACE_2);
             ui.horizontal(|ui| {
                 if ui.button(t!("update.open_page")).clicked() {
                     choice = Some(Choice::OpenPage(release.html_url.clone()));
@@ -314,15 +317,15 @@ fn dialog_body(ui: &mut egui::Ui, dialog: &mut Dialog) -> Option<Choice> {
                 "update.up_to_date",
                 version = updater::current_version()
             ));
-            ui.add_space(8.0);
+            ui.add_space(crate::theme::SPACE_2);
             if ui.button(t!("update.ok")).clicked() {
                 choice = Some(Choice::Close);
             }
         }
         Dialog::CheckFailed(error) => {
-            ui.heading(t!("update.failed_title"));
+            crate::ui_kit::heading(ui, t!("update.failed_title"));
             ui.label(t!("update.check_failed", error = error.as_str()));
-            ui.add_space(8.0);
+            ui.add_space(crate::theme::SPACE_2);
             if ui.button(t!("common.close")).clicked() {
                 choice = Some(Choice::Close);
             }

@@ -146,7 +146,7 @@ impl SettingsDialog {
                         }
                         Section::Integrations => {
                             response.changed |= integrations_section(ui, settings, self.mcp_forced);
-                            ui.add_space(12.0);
+                            ui.add_space(crate::theme::SPACE_3);
                             ui.separator();
                             response.gemini_key_changed |= gemini_key_section(
                                 ui,
@@ -158,7 +158,7 @@ impl SettingsDialog {
                             let (changed, pick) = models_and_dub_section(ui, settings);
                             response.changed |= changed;
                             response.pick_models_dir |= pick;
-                            ui.add_space(12.0);
+                            ui.add_space(crate::theme::SPACE_3);
                             ui.separator();
                             response.changed |= self.ai_section(ui, settings);
                             response.gemini_key_changed |= gemini_key_section(
@@ -337,9 +337,9 @@ impl SettingsDialog {
         let mut changed = false;
         ui.label(t!("settings.shortcuts_hint"));
         if let Some(notice) = &self.notice {
-            ui.colored_label(egui::Color32::YELLOW, notice);
+            crate::ui_kit::status(ui, crate::ui_kit::Tone::Warning, notice);
         }
-        ui.add_space(4.0);
+        ui.add_space(crate::theme::SPACE_1);
         egui::ScrollArea::vertical()
             .max_height(ui.available_height() - 36.0)
             .auto_shrink([false, true])
@@ -348,7 +348,7 @@ impl SettingsDialog {
                 for action in Action::ALL {
                     if action.category() != category {
                         category = action.category();
-                        ui.add_space(6.0);
+                        ui.add_space(crate::theme::SPACE_2);
                         ui.strong(category.as_ref());
                     }
                     ui.horizontal(|ui| {
@@ -485,7 +485,7 @@ fn recording_section(
     formats: &[AudioFileFormat],
 ) -> (bool, bool) {
     let mut changed = input_device_picker(ui, &mut settings.input_device, input_devices);
-    ui.add_space(8.0);
+    ui.add_space(crate::theme::SPACE_2);
     ui.horizontal(|ui| {
         ui.label(t!("settings.recording_format"));
         let current = AudioFileFormat::resolve(settings.recording_format);
@@ -511,7 +511,7 @@ fn recording_section(
         ui.weak(t!("settings.recording_format_missing"));
     }
 
-    ui.add_space(8.0);
+    ui.add_space(crate::theme::SPACE_2);
     ui.label(t!("settings.recording_dir"));
     let mut pick = false;
     if ui
@@ -583,7 +583,7 @@ fn integrations_section(ui: &mut egui::Ui, settings: &mut Settings, forced: bool
     if forced && !settings.mcp_enabled {
         ui.label(egui::RichText::new(t!("settings.mcp_forced")).color(crate::theme::ACCENT));
     }
-    ui.add_space(4.0);
+    ui.add_space(crate::theme::SPACE_1);
     ui.label(egui::RichText::new(t!("settings.mcp_enabled_hint")).weak());
     // Inside an AppImage, `current_exe` is the temporary mount.
     let exe = std::env::var_os("APPIMAGE")
@@ -717,7 +717,7 @@ fn hw_decode_settings(ui: &mut egui::Ui, settings: &mut Settings) -> bool {
                 .map(crate::hw_decode::device_label)
                 .collect();
             ui.colored_label(
-                egui::Color32::YELLOW,
+                crate::theme::WARNING,
                 t!("settings.hw_decode_failed", devices = devices.join(", ")),
             );
         }
@@ -844,10 +844,10 @@ fn playback_section(ui: &mut egui::Ui, settings: &mut Settings) -> bool {
         .on_hover_text(t!("settings.keyframes_when_behind_hint"))
         .changed();
 
-    ui.add_space(12.0);
+    ui.add_space(crate::theme::SPACE_3);
     changed |= hw_decode_settings(ui, settings);
 
-    ui.add_space(12.0);
+    ui.add_space(crate::theme::SPACE_3);
     ui.strong(t!("settings.proxy"));
     changed |= ui
         .checkbox(&mut settings.proxy_enabled, t!("menu.use_proxy"))

@@ -82,7 +82,7 @@ impl VenturiApp {
         let modal = egui::Modal::new(egui::Id::new("dub_modal")).show(ctx, |ui| {
             let size = ctx.content_rect().size();
             ui.set_width((size.x - theme::SPACE_5 * 2.0).clamp(220.0, 820.0));
-            ui.heading(t!("dub.title"));
+            crate::ui_kit::heading(ui, t!("dub.title"));
             if self.dub.confirm_whisper {
                 if let Some((_, model)) = self.dub_whisper_missing() {
                     ui.label(t!("dub.whisper_download_hint", mb = model.size_mb()));

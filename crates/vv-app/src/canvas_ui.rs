@@ -73,7 +73,7 @@ impl VenturiApp {
         targets: &[PanelTarget],
         pending: &mut Vec<BoxedCommand>,
     ) {
-        ui.add_space(6.0);
+        ui.add_space(crate::theme::SPACE_2);
         let (open, _) = section_header(ui, &t!("props.canvas"), false);
         if !open {
             return;

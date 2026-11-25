@@ -197,7 +197,7 @@ fn show_setup(
         count = references.len(),
         dir = base_dir.display()
     ));
-    ui.add_space(4.0);
+    ui.add_space(crate::theme::SPACE_1);
     egui::Grid::new("forced_relink_criteria")
         .num_columns(2)
         .spacing([12.0, 6.0])
@@ -326,7 +326,7 @@ fn show_results(
             .to_string()
     };
     ui.label(t!("relink.results_intro"));
-    ui.add_space(4.0);
+    ui.add_space(crate::theme::SPACE_1);
     egui::ScrollArea::vertical()
         .max_height(320.0)
         .auto_shrink([false, true])
