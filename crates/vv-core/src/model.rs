@@ -1769,6 +1769,8 @@ pub struct EffectStack {
     pub remove_background: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub canvas: Option<Canvas>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stabilize: Option<crate::stabilize::Stabilization>,
 }
 
 /// What fills the frame behind a clip where the clip does not cover it.
@@ -1816,6 +1818,8 @@ struct StoredEffectStack {
     remove_background: bool,
     #[serde(default)]
     canvas: Option<Canvas>,
+    #[serde(default)]
+    stabilize: Option<crate::stabilize::Stabilization>,
 }
 
 impl From<StoredEffectStack> for EffectStack {
@@ -1842,6 +1846,7 @@ impl From<StoredEffectStack> for EffectStack {
             assets: stored.assets,
             remove_background: stored.remove_background,
             canvas: stored.canvas,
+            stabilize: stored.stabilize,
         }
     }
 }
@@ -1863,6 +1868,7 @@ impl Default for EffectStack {
             assets: Vec::new(),
             remove_background: false,
             canvas: None,
+            stabilize: None,
         }
     }
 }

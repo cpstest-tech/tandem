@@ -78,6 +78,7 @@ mod slip_viewer;
 mod spawn;
 mod speed_curve_ui;
 mod speed_dialog;
+mod stabilize_ui;
 mod sticker_anim;
 mod stickers;
 mod stickers_ui;
@@ -636,6 +637,7 @@ struct VenturiApp {
     dub: dub::State,
     beat: beat_sync::State,
     adjust: adjust_tab::AdjustState,
+    stabilize: stabilize_ui::State,
     vertical: vertical_layout::State,
     transcript: transcript::State,
     style_packs: style_packs::State,
@@ -798,6 +800,7 @@ impl Default for VenturiApp {
             dub: dub::State::default(),
             beat: beat_sync::State::default(),
             adjust: Default::default(),
+            stabilize: Default::default(),
             vertical: vertical_layout::State::default(),
             transcript: transcript::State::default(),
             style_packs: style_packs::State::default(),
@@ -4432,6 +4435,7 @@ impl VenturiApp {
         // What the session applies would land inside the open group.
         if self.edit_drag_group.is_none() && !self.timeline_state.holds_undo_group() {
             self.poll_session(&ui.ctx().clone());
+            self.poll_stabilize_job(&ui.ctx().clone());
         }
         let screenshots: Vec<std::sync::Arc<egui::ColorImage>> = ui.ctx().input(|i| {
             i.raw

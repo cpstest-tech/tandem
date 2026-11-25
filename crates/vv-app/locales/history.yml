@@ -24,6 +24,10 @@ history.lock_track:
   en: "Lock track"
   it: "Blocca track"
 
+history.stabilize:
+  en: "Stabilize"
+  it: "Stabilizza"
+
 history.speed_curve:
   en: "Speed curve"
   it: "Curva di velocità"

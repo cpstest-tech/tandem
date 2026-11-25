@@ -84,6 +84,7 @@ pub enum CommandLabel {
     ApplyPreset,
     ClipSpeed,
     SpeedCurve,
+    Stabilize,
     FreezeFrame,
     ReverseClips,
     RemoveSilences,

@@ -20,6 +20,7 @@ pub mod persistence;
 pub mod pool;
 pub mod reframe;
 pub mod speed_curve;
+pub mod stabilize;
 mod stable_hash;
 pub mod style_pack;
 pub mod text_anim;

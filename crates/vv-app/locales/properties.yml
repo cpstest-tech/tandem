@@ -797,6 +797,22 @@ props.stabilize:
   en: "Stabilize"
   it: "Stabilizza"
 
+props.stabilize_on:
+  en: "Stabilize the shot"
+  it: "Stabilizza l'inquadratura"
+
+props.stabilize_analyzing:
+  en: "Measuring the motion…"
+  it: "Misuro il movimento…"
+
+props.stabilize_trimmed:
+  en: "The clip was trimmed after the analysis."
+  it: "Il clip è stato tagliato dopo l'analisi."
+
+props.stabilize_again:
+  en: "Analyze again"
+  it: "Analizza di nuovo"
+
 props.canvas:
   en: "Canvas"
   it: "Canvas"

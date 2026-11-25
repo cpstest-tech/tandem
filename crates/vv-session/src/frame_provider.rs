@@ -652,6 +652,30 @@ fn with_assets(
     }
 }
 
+/// The clip's stabilization at timeline `frame`, on the picture it shows.
+fn stabilize(
+    project: &Project,
+    clip: &Clip,
+    frame: FrameIdx,
+    timeline_size: (u32, u32),
+    transform: &mut vv_core::Transform,
+) {
+    let (Some(stab), ClipSource::Media(media_id)) = (&clip.effects.stabilize, &clip.source) else {
+        return;
+    };
+    let Some(media) = project.media_pool.get(*media_id) else {
+        return;
+    };
+    let (w, h) = (timeline_size.0 as f32, timeline_size.1 as f32);
+    let aspect = media.meta.width.max(1) as f32 / media.meta.height.max(1) as f32;
+    let fit = if aspect > w / h {
+        [w, w / aspect]
+    } else {
+        [h * aspect, h]
+    };
+    stab.apply(transform, clip.picture_frame_at(frame), fit);
+}
+
 /// The layer of `clip` at timeline frame `frame`, shared by preview
 /// and export. `Ok(None)`: media frame not available.
 pub fn clip_layer(
@@ -664,6 +688,7 @@ pub fn clip_layer(
 ) -> Result<Option<OwnedLayer>, ExportError> {
     let source_frame = clip.source_frame_at(frame);
     let mut transform = clip.effects.transform.value_at(source_frame);
+    stabilize(project, clip, frame, timeline_size, &mut transform);
     clip.effects.animations.apply(
         &mut transform,
         (frame - clip.timeline_start) as f64 / fps.max(1.0),
@@ -858,6 +883,7 @@ fn crossing_side_layer(
 ) -> Result<Option<OwnedLayer>, ExportError> {
     let source_frame = clip.source_frame_at(frame);
     let mut transform = clip.effects.transform.value_at(source_frame);
+    stabilize(project, clip, frame, timeline_size, &mut transform);
     clip.effects.animations.apply(
         &mut transform,
         (frame - clip.timeline_start) as f64 / fps.max(1.0),
