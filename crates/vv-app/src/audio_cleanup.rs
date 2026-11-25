@@ -214,7 +214,7 @@ impl VenturiApp {
                 Cleanup::Noise => t!("props.noise_reduction"),
                 Cleanup::Level => t!("props.auto_level"),
             };
-            ui.add_space(6.0);
+            ui.add_space(crate::theme::SPACE_2);
             let (open, reset) = section_header(ui, &title, true);
             if tracks.is_empty() {
                 if open {

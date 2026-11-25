@@ -124,7 +124,7 @@ impl VenturiApp {
             self.stabilize.applied = None;
         }
         self.poll_stabilize_job(ui.ctx());
-        ui.add_space(6.0);
+        ui.add_space(crate::theme::SPACE_2);
         let (open, _) = section_header(ui, &t!("props.stabilize"), false);
         if !open {
             return;
@@ -224,12 +224,7 @@ impl VenturiApp {
         }
         ui.horizontal(|ui| {
             if !generated {
-                let run = ui.add(
-                    egui::Button::new(
-                        egui::RichText::new(t!("stabilize.run")).color(theme::ON_ACCENT),
-                    )
-                    .fill(theme::ACCENT_FILL),
-                );
+                let run = ui.add(crate::ui_kit::primary_button(t!("stabilize.run")));
                 if run.clicked() {
                     match &motion {
                         Some(motion) => {

@@ -377,7 +377,7 @@ fn tool_row(
             egui::pos2(rect.left() + 34.0, rect.center().y),
             egui::Align2::LEFT_CENTER,
             tool_label(tool),
-            egui::FontId::proportional(13.0),
+            egui::FontId::proportional(crate::theme::FONT_SECTION),
             color,
         );
         if let Some(shortcut) = keymap.shortcuts(action).first() {
@@ -385,7 +385,7 @@ fn tool_row(
                 egui::pos2(rect.right() - 10.0, rect.center().y),
                 egui::Align2::RIGHT_CENTER,
                 shortcut.to_string(),
-                egui::FontId::proportional(12.0),
+                egui::FontId::proportional(crate::theme::FONT_BODY),
                 crate::theme::TEXT_SECONDARY,
             );
         }
@@ -984,7 +984,7 @@ pub(crate) fn show_empty(ui: &mut egui::Ui, header_width: f32) -> Option<Timelin
             egui::pos2(x + 3.0, ruler.top() + 2.0),
             egui::Align2::LEFT_TOP,
             format!("{second}s"),
-            egui::FontId::proportional(10.0),
+            egui::FontId::proportional(crate::theme::FONT_SMALL),
             muted,
         );
         x += 60.0 * 5.0;
@@ -1022,7 +1022,7 @@ pub(crate) fn show_empty(ui: &mut egui::Ui, header_width: f32) -> Option<Timelin
         header.min + egui::vec2(26.0, track_height / 2.0),
         egui::Align2::LEFT_CENTER,
         t!("timeline.main_track"),
-        egui::FontId::proportional(12.0),
+        egui::FontId::proportional(crate::theme::FONT_BODY),
         muted,
     );
 
@@ -1049,7 +1049,7 @@ pub(crate) fn show_empty(ui: &mut egui::Ui, header_width: f32) -> Option<Timelin
         egui::pos2(drop_zone.center().x, track.center().y),
         egui::Align2::CENTER_CENTER,
         t!("timeline.empty_hint"),
-        egui::FontId::proportional(14.0),
+        egui::FontId::proportional(crate::theme::FONT_BODY),
         muted.gamma_multiply(0.7),
     );
     ui.allocate_rect(rect, egui::Sense::hover());

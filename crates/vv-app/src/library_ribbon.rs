@@ -798,7 +798,7 @@ pub(crate) fn empty_state(ui: &mut egui::Ui, text: &str) -> bool {
     );
     let galley = painter.layout(
         text.to_owned(),
-        egui::FontId::proportional(13.0),
+        egui::FontId::proportional(crate::theme::FONT_SECTION),
         color,
         (rect.width() - 24.0).max(40.0),
     );
@@ -1838,7 +1838,7 @@ fn text_card(
         egui::pos2(rect.center().x, rect.bottom() - 4.0),
         egui::Align2::CENTER_BOTTOM,
         &card.name,
-        egui::FontId::proportional(11.0),
+        egui::FontId::proportional(crate::theme::FONT_SMALL),
         weak_color,
     );
     if !response.hovered() {
@@ -1846,7 +1846,7 @@ fn text_card(
             preview_rect.right_top() + egui::vec2(-4.0, 3.0),
             egui::Align2::RIGHT_TOP,
             format!("{duration:.0}s"),
-            egui::FontId::proportional(10.0),
+            egui::FontId::proportional(crate::theme::FONT_TINY),
             egui::Color32::from_white_alpha(170),
         );
     }

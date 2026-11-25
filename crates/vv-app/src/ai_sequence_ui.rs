@@ -196,13 +196,8 @@ fn placement_key(placement: Placement) -> &'static str {
 }
 
 fn accent_button(ui: &mut egui::Ui, text: String, enabled: bool) -> egui::Response {
-    let button = egui::Button::new(
-        egui::RichText::new(text)
-            .color(theme::ON_ACCENT)
-            .size(theme::FONT_SECTION),
-    )
-    .fill(theme::ACCENT_FILL)
-    .min_size(egui::vec2(ui.available_width(), theme::FIELD_HEIGHT));
+    let button = crate::ui_kit::primary_button(text)
+        .min_size(egui::vec2(ui.available_width(), theme::FIELD_HEIGHT));
     ui.add_enabled(enabled, button)
 }
 
@@ -340,7 +335,7 @@ impl VenturiApp {
         self.open_ai_queue();
 
         ui.add_space(theme::SPACE_2);
-        ui.heading(t!("ai_sequence.title"));
+        crate::ui_kit::heading(ui, t!("ai_sequence.title"));
         ui.add_space(theme::SPACE_1);
         let generate_label = t!("ai_sequence.tab_generate");
         let suggestions_label = t!("ai_sequence.tab_suggestions");

@@ -470,7 +470,7 @@ pub(crate) fn grade_section(
             .clicked();
     });
 
-    ui.add_space(4.0);
+    ui.add_space(crate::theme::SPACE_1);
     let spacing = ui.spacing().item_spacing.x;
     let available = ui.available_width();
     let columns = wheel_columns(available, spacing);
@@ -486,9 +486,9 @@ pub(crate) fn grade_section(
                 );
             }
         });
-        ui.add_space(4.0);
+        ui.add_space(crate::theme::SPACE_1);
     }
-    ui.add_space(4.0);
+    ui.add_space(crate::theme::SPACE_1);
     for param in [GradeParam::LowRange, GradeParam::HighRange] {
         scalar_row(
             ui,

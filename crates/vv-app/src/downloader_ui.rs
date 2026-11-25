@@ -120,13 +120,8 @@ fn format_speed(bytes_per_second: f64) -> String {
 }
 
 fn primary_button(ui: &mut egui::Ui, text: impl Into<String>, enabled: bool) -> egui::Response {
-    let button = egui::Button::new(
-        egui::RichText::new(text.into())
-            .color(theme::ON_ACCENT)
-            .size(theme::FONT_BODY),
-    )
-    .fill(theme::ACCENT_FILL)
-    .min_size(egui::vec2(0.0, theme::FIELD_HEIGHT));
+    let button =
+        crate::ui_kit::primary_button(text.into()).min_size(egui::vec2(0.0, theme::FIELD_HEIGHT));
     ui.add_enabled(enabled, button)
 }
 
@@ -488,7 +483,7 @@ impl VenturiApp {
         let mut start = false;
         let modal = egui::Modal::new(egui::Id::new("download_dialog")).show(ctx, |ui| {
             ui.set_width(DIALOG_WIDTH);
-            ui.label(egui::RichText::new(t!("downloader.title")).size(theme::FONT_MODAL_TITLE));
+            crate::ui_kit::heading(ui, t!("downloader.title"));
             ui.add_space(theme::SPACE_3);
             dialog_header(ui, dialog);
             ui.add_space(theme::SPACE_3);
@@ -643,11 +638,7 @@ fn dialog_header(ui: &mut egui::Ui, dialog: &Dialog) {
                     ui.weak(&dialog.link.url);
                 }
                 Some(Ok(Probed::Media { info, .. })) => {
-                    ui.label(
-                        egui::RichText::new(&info.title)
-                            .size(theme::FONT_SECTION)
-                            .strong(),
-                    );
+                    ui.label(crate::ui_kit::section_title(&info.title));
                     let mut meta = vec![info.uploader.clone()];
                     if let Some(duration) = info.duration {
                         meta.push(format_time(duration));
@@ -669,11 +660,7 @@ fn dialog_header(ui: &mut egui::Ui, dialog: &Dialog) {
                     } else {
                         collection.name.clone()
                     };
-                    ui.label(
-                        egui::RichText::new(heading)
-                            .size(theme::FONT_SECTION)
-                            .strong(),
-                    );
+                    ui.label(crate::ui_kit::section_title(heading));
                     if !single {
                         ui.weak(t!("downloader.tracks", count = collection.tracks.len()));
                     }

@@ -68,7 +68,7 @@ pub(crate) fn effects_section_header(ui: &mut egui::Ui, title: &str) {
         rect.left_center() + egui::vec2(6.0, 0.0),
         egui::Align2::LEFT_CENTER,
         title,
-        egui::FontId::proportional(13.0),
+        egui::FontId::proportional(crate::theme::FONT_SECTION),
         ui.visuals().strong_text_color(),
     );
 }
@@ -109,7 +109,7 @@ pub(crate) fn effect_item(ui: &mut egui::Ui, generator: timeline_ui::Generator) 
                 thumb.center(),
                 egui::Align2::CENTER_CENTER,
                 "Aa",
-                egui::FontId::proportional(13.0),
+                egui::FontId::proportional(crate::theme::FONT_SECTION),
                 egui::Color32::WHITE,
             );
         }
@@ -127,7 +127,7 @@ pub(crate) fn effect_item(ui: &mut egui::Ui, generator: timeline_ui::Generator) 
         egui::pos2(thumb.right() + 14.0, rect.center().y),
         egui::Align2::LEFT_CENTER,
         timeline_ui::generator_label(generator),
-        egui::FontId::proportional(13.0),
+        egui::FontId::proportional(crate::theme::FONT_SECTION),
         visuals.text_color(),
     );
     resp.dnd_set_drag_payload(generator);
@@ -175,7 +175,7 @@ pub(crate) fn filter_item(ui: &mut egui::Ui, filter: timeline_ui::FilterEntry) {
         egui::pos2(thumb.right() + 14.0, rect.center().y),
         egui::Align2::LEFT_CENTER,
         label.as_ref(),
-        egui::FontId::proportional(13.0),
+        egui::FontId::proportional(crate::theme::FONT_SECTION),
         visuals.text_color(),
     );
     resp.dnd_set_drag_payload(filter);
@@ -229,7 +229,7 @@ pub(crate) fn transition_item(ui: &mut egui::Ui, kind: vv_core::TransitionKind) 
         egui::pos2(thumb.right() + 14.0, rect.center().y),
         egui::Align2::LEFT_CENTER,
         label.as_ref(),
-        egui::FontId::proportional(13.0),
+        egui::FontId::proportional(crate::theme::FONT_SECTION),
         visuals.text_color(),
     );
     resp.dnd_set_drag_payload(kind);
@@ -762,14 +762,14 @@ impl VenturiApp {
                             for generator in generators {
                                 effect_item(ui, generator);
                             }
-                            ui.add_space(8.0);
+                            ui.add_space(crate::theme::SPACE_2);
                         }
                         if !filters.is_empty() {
                             effects_section_header(ui, &t!("effects.filters"));
                             for filter in filters {
                                 filter_item(ui, filter);
                             }
-                            ui.add_space(8.0);
+                            ui.add_space(crate::theme::SPACE_2);
                         }
                         if !transitions.is_empty() {
                             effects_section_header(ui, &t!("effects.transitions"));

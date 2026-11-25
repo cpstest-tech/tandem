@@ -624,14 +624,14 @@ fn strip(
                     chain,
                     &mut edit,
                 );
-                ui.add_space(6.0);
+                ui.add_space(crate::theme::SPACE_2);
                 edit.pan = pan_knob(ui, mix.pan);
                 ui.small(format_pan(mix.pan));
-                ui.add_space(4.0);
+                ui.add_space(crate::theme::SPACE_1);
                 solo_mute(ui, flags, &mut edit);
-                ui.add_space(6.0);
+                ui.add_space(crate::theme::SPACE_2);
                 edit.gain_db = fader(ui, mix.gain_db, level);
-                ui.add_space(4.0);
+                ui.add_space(crate::theme::SPACE_1);
                 let mut field = mix.gain_db as f64;
                 let range = MixerParam::GainDb.range();
                 if drag_field(
@@ -644,7 +644,7 @@ fn strip(
                 ) {
                     edit.gain_db = Some(field as f32);
                 }
-                ui.add_space(4.0);
+                ui.add_space(crate::theme::SPACE_1);
                 ui.strong(label);
             });
         });
@@ -849,7 +849,7 @@ fn paint_drag_ghost(ui: &egui::Ui, name: &str, fill: egui::Color32, text: egui::
         rect.center(),
         egui::Align2::CENTER_CENTER,
         name,
-        egui::FontId::proportional(11.0),
+        egui::FontId::proportional(crate::theme::FONT_SMALL),
         text,
     );
 }
@@ -894,7 +894,7 @@ fn pan_knob(ui: &mut egui::Ui, pan: f32) -> Option<f32> {
     let (response, changed) = knob(ui, (pan + 1.0) / 2.0, 0.5, KNOB_RADIUS);
     let c = response.rect.center();
     let at = |angle: f32, radius: f32| c + radius * egui::vec2(angle.sin(), -angle.cos());
-    let font = egui::FontId::proportional(9.0);
+    let font = egui::FontId::proportional(crate::theme::FONT_TINY);
     let weak = ui.visuals().weak_text_color();
     let painter = ui.painter();
     painter.text(
@@ -1016,7 +1016,7 @@ fn fader(ui: &mut egui::Ui, gain_db: f32, level: [f32; 2]) -> Option<f32> {
         egui::pos2(rect.right(), bottom),
     );
     let weak = ui.visuals().weak_text_color();
-    let font = egui::FontId::proportional(9.0);
+    let font = egui::FontId::proportional(crate::theme::FONT_TINY);
     for db in SCALE_MARKS {
         let y = y_of(fader_position(db));
         let text = if db > 0.0 {
@@ -1097,9 +1097,9 @@ fn paint_meter(
     level: [f32; 2],
     y_of: &impl Fn(f32) -> f32,
 ) {
-    const GREEN: egui::Color32 = egui::Color32::from_rgb(60, 200, 90);
-    const YELLOW: egui::Color32 = egui::Color32::from_rgb(230, 200, 50);
-    const RED: egui::Color32 = egui::Color32::from_rgb(220, 50, 50);
+    const GREEN: egui::Color32 = crate::theme::SUCCESS;
+    const YELLOW: egui::Color32 = crate::theme::WARNING;
+    const RED: egui::Color32 = crate::theme::ERROR;
     let gap = 2.0;
     let bar_width = (rect.width() - gap) / 2.0;
     let zones = [

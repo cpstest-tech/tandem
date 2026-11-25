@@ -319,12 +319,7 @@ impl VenturiApp {
             Some(_) => {
                 ui.horizontal(|ui| {
                     if ui
-                        .add(
-                            egui::Button::new(
-                                egui::RichText::new(t!("beat.apply")).color(theme::ON_ACCENT),
-                            )
-                            .fill(theme::ACCENT_FILL),
-                        )
+                        .add(crate::ui_kit::primary_button(t!("beat.apply")))
                         .clicked()
                     {
                         self.beat.preview = None;

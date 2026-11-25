@@ -370,10 +370,7 @@ impl VenturiApp {
             }
             ui.weak(t!("style_pack.preview_hint"));
             ui.horizontal(|ui| {
-                let confirm = egui::Button::new(
-                    egui::RichText::new(t!("style_pack.confirm")).color(theme::ON_ACCENT),
-                )
-                .fill(theme::ACCENT_FILL);
+                let confirm = crate::ui_kit::primary_button(t!("style_pack.confirm"));
                 if ui.add(confirm).clicked() {
                     self.confirm_style_pack();
                 }
@@ -383,10 +380,7 @@ impl VenturiApp {
             });
         } else {
             let can_apply = self.timeline_id.is_some() && !self.style_packs.choice.is_empty();
-            let apply = egui::Button::new(
-                egui::RichText::new(t!("style_pack.preview")).color(theme::ON_ACCENT),
-            )
-            .fill(theme::ACCENT_FILL);
+            let apply = crate::ui_kit::primary_button(t!("style_pack.preview"));
             if ui
                 .add_enabled(can_apply, apply)
                 .on_hover_text(t!("style_pack.preview_button_hint"))
@@ -513,10 +507,7 @@ impl VenturiApp {
                 self.edit_safe_zone(ui, &mut pack.safe_zone);
             });
         ui.horizontal(|ui| {
-            let save = egui::Button::new(
-                egui::RichText::new(t!("style_pack.save")).color(theme::ON_ACCENT),
-            )
-            .fill(theme::ACCENT_FILL);
+            let save = crate::ui_kit::primary_button(t!("style_pack.save"));
             if ui.add_enabled(!pack.name.trim().is_empty(), save).clicked() {
                 close = Some(true);
             }

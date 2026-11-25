@@ -1,9 +1,5 @@
 _version: 2
 
-home.title:
-  en: "Projects"
-  it: "Progetti"
-
 home.new_project:
   en: "New project"
   it: "Nuovo progetto"

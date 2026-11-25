@@ -901,7 +901,7 @@ impl VenturiApp {
             }
             self.ai_clips.preview_selection = Some((fingerprint, self.ai_clips.history_index));
         }
-        ui.heading(t!("ai_clips.title"));
+        crate::ui_kit::heading(ui, t!("ai_clips.title"));
         ui.label(t!("ai_clips.source"));
         if videos.is_empty() {
             ui.weak(t!("ai_clips.select_source"));

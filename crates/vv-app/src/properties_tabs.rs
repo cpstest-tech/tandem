@@ -171,7 +171,7 @@ const PLACEHOLDER_LABEL_WIDTH: f32 = 120.0;
 
 /// Folding section whose controls are all [placeholder] sliders.
 pub(crate) fn placeholder_section(ui: &mut egui::Ui, title: &str, rows: &[Cow<'static, str>]) {
-    ui.add_space(6.0);
+    ui.add_space(crate::theme::SPACE_2);
     let (open, _) = section_header(ui, title, false);
     if open {
         for row in rows {
@@ -182,7 +182,7 @@ pub(crate) fn placeholder_section(ui: &mut egui::Ui, title: &str, rows: &[Cow<'s
 
 /// Folding section with a single disabled button.
 pub(crate) fn placeholder_button_section(ui: &mut egui::Ui, title: &str, button: &str) {
-    ui.add_space(6.0);
+    ui.add_space(crate::theme::SPACE_2);
     let (open, _) = section_header(ui, title, false);
     if open {
         soon(ui.add_enabled(false, egui::Button::new(button)));
@@ -190,7 +190,7 @@ pub(crate) fn placeholder_button_section(ui: &mut egui::Ui, title: &str, button:
 }
 
 fn placeholder_checkbox_section(ui: &mut egui::Ui, title: &str) {
-    ui.add_space(6.0);
+    ui.add_space(crate::theme::SPACE_2);
     let (open, _) = section_header(ui, title, false);
     if open {
         let mut off = false;
@@ -226,7 +226,7 @@ impl VenturiApp {
             .filter_map(|t| Some((*t, media_of(t)?)))
             .collect();
 
-        ui.add_space(6.0);
+        ui.add_space(crate::theme::SPACE_2);
         let (open, _) = section_header(ui, &t!("props.auto_cutout"), false);
         if open {
             match media.first() {
@@ -257,7 +257,7 @@ impl VenturiApp {
             }
         }
 
-        ui.add_space(6.0);
+        ui.add_space(crate::theme::SPACE_2);
         let chroma = filters
             .iter()
             .find(|f| f.kind == vv_core::FilterKind::ChromaKey);
@@ -382,7 +382,7 @@ impl VenturiApp {
 }
 
 pub(crate) fn mask_shapes_placeholder(ui: &mut egui::Ui) {
-    ui.add_space(6.0);
+    ui.add_space(crate::theme::SPACE_2);
     let (open, _) = section_header(ui, &t!("props.mask_shapes"), false);
     if open {
         ui.horizontal_wrapped(|ui| {
@@ -440,7 +440,7 @@ pub(crate) fn adjust_placeholders(ui: &mut egui::Ui) {
 }
 
 pub(crate) fn speed_curve_placeholder(ui: &mut egui::Ui) {
-    ui.add_space(8.0);
+    ui.add_space(crate::theme::SPACE_2);
     ui.add_enabled_ui(false, |ui| {
         let (rect, response) = ui.allocate_exact_size(
             egui::vec2(ui.available_width(), 120.0),
@@ -762,7 +762,7 @@ impl VenturiApp {
         let key = egui::Id::new("speed_tab_value");
         let mut value: f64 = ui.data(|d| d.get_temp(key)).unwrap_or(current);
         let (mut commit, mut reset) = (false, false);
-        ui.add_space(6.0);
+        ui.add_space(crate::theme::SPACE_2);
         ui.horizontal(|ui| {
             ui.add_sized(
                 [PLACEHOLDER_LABEL_WIDTH, 18.0],

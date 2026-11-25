@@ -691,13 +691,16 @@ impl VenturiApp {
         };
         let mut choice = None;
         let modal = egui::Modal::new(egui::Id::new("unsaved_changes")).show(ui.ctx(), |ui| {
-            ui.heading(if switch == ProjectSwitch::Quit {
-                t!("project.save_before_quit")
-            } else {
-                t!("project.save_changes")
-            });
+            crate::ui_kit::heading(
+                ui,
+                if switch == ProjectSwitch::Quit {
+                    t!("project.save_before_quit")
+                } else {
+                    t!("project.save_changes")
+                },
+            );
             ui.label(t!("project.unsaved_changes"));
-            ui.add_space(8.0);
+            ui.add_space(crate::theme::SPACE_2);
             ui.horizontal(|ui| {
                 if ui.button(t!("common.save")).clicked() {
                     choice = Some(UnsavedChoice::Save);
@@ -787,9 +790,9 @@ impl VenturiApp {
         let name = name.to_owned();
         let mut choice = None;
         let modal = egui::Modal::new(egui::Id::new("otio_merge")).show(ui.ctx(), |ui| {
-            ui.heading(t!("project.otio_media_exist"));
+            crate::ui_kit::heading(ui, t!("project.otio_media_exist"));
             ui.label(t!("project.otio_media_exist_detail", count = matches));
-            ui.add_space(8.0);
+            ui.add_space(crate::theme::SPACE_2);
             ui.horizontal(|ui| {
                 if ui
                     .button(t!("project.otio_import_into_folder", folder = name))
@@ -827,8 +830,8 @@ impl VenturiApp {
             return;
         };
         egui::Modal::new(egui::Id::new("otio_import_progress")).show(ui.ctx(), |ui| {
-            ui.heading(t!("project.otio_importing"));
-            ui.add_space(8.0);
+            crate::ui_kit::heading(ui, t!("project.otio_importing"));
+            ui.add_space(crate::theme::SPACE_2);
             let bar = if total == 0 {
                 egui::ProgressBar::new(0.0).animate(true)
             } else {
@@ -1185,7 +1188,7 @@ impl VenturiApp {
                 ui.set_width(360.0);
                 if let Some(name) = &file_name {
                     ui.label(egui::RichText::new(name).strong());
-                    ui.add_space(4.0);
+                    ui.add_space(crate::theme::SPACE_1);
                 }
 
                 let fraction = if total > 0 {
@@ -1214,16 +1217,16 @@ impl VenturiApp {
                     });
                 }
 
-                ui.add_space(6.0);
+                ui.add_space(crate::theme::SPACE_2);
                 egui::CollapsingHeader::new(t!("project.export_stages").into_owned())
                     .id_salt("export_stages")
                     .show(ui, |ui| pipeline.show(ui))
                     .header_response
                     .on_hover_text(t!("project.export_stage_hint"));
 
-                ui.add_space(6.0);
+                ui.add_space(crate::theme::SPACE_2);
                 if let Some(err) = &error {
-                    ui.colored_label(ui.visuals().error_fg_color, format!("✖ {err}"));
+                    crate::ui_kit::status(ui, crate::ui_kit::Tone::Error, format!("✖ {err}"));
                 } else if done {
                     let elapsed = format_elapsed(elapsed);
                     let text = match fps {
@@ -1234,7 +1237,7 @@ impl VenturiApp {
                         ),
                         None => t!("project.export_done", elapsed = elapsed),
                     };
-                    ui.colored_label(egui::Color32::from_rgb(110, 205, 120), format!("✔ {text}"));
+                    crate::ui_kit::status(ui, crate::ui_kit::Tone::Success, format!("✔ {text}"));
                 }
 
                 // `horizontal` first: a bare right-to-left layout takes all the
@@ -1417,8 +1420,8 @@ impl VenturiApp {
         let done = progress.done.load(Ordering::Relaxed).min(total);
         let mut cancel = false;
         egui::Modal::new(egui::Id::new("relink_progress")).show(ui.ctx(), |ui| {
-            ui.heading(t!("relink.title"));
-            ui.add_space(8.0);
+            crate::ui_kit::heading(ui, t!("relink.title"));
+            ui.add_space(crate::theme::SPACE_2);
             let bar = if total == 0 {
                 egui::ProgressBar::new(0.0)
                     .animate(true)
@@ -1431,7 +1434,7 @@ impl VenturiApp {
                 ))
             };
             ui.add(bar.desired_width(320.0));
-            ui.add_space(8.0);
+            ui.add_space(crate::theme::SPACE_2);
             cancel = ui.button(t!("common.cancel")).clicked();
         });
         if cancel {
@@ -1633,7 +1636,7 @@ fn paint_loading_overlay(ctx: &egui::Context, name: &str) {
                 center + egui::vec2(0.0, 22.0),
                 egui::Align2::CENTER_TOP,
                 t!("project.loading", name = name),
-                egui::FontId::proportional(16.0),
+                egui::FontId::proportional(crate::theme::FONT_LARGE),
                 egui::Color32::WHITE,
             );
         });

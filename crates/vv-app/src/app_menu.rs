@@ -390,13 +390,7 @@ impl VenturiApp {
                         .max_rect(row)
                         .layout(egui::Layout::right_to_left(egui::Align::Center)),
                 );
-                let export = egui::Button::new(
-                    egui::RichText::new(t!("top_bar.export"))
-                        .color(theme::ON_ACCENT)
-                        .size(theme::FONT_BODY),
-                )
-                .fill(theme::ACCENT)
-                .corner_radius(theme::RADIUS_CONTROL);
+                let export = crate::ui_kit::primary_button(t!("top_bar.export"));
                 if right.add(export).clicked() {
                     self.open_export_modal();
                 }
@@ -950,9 +944,9 @@ impl VenturiApp {
                     if let Some(texture) = &icon {
                         ui.add(egui::Image::new(texture).fit_to_exact_size(egui::vec2(96.0, 96.0)));
                     }
-                    ui.heading("Tandem video editor");
+                    crate::ui_kit::heading(ui, "Tandem video editor");
                     ui.label(t!("about.version", version = env!("VV_VERSION")));
-                    ui.add_space(8.0);
+                    ui.add_space(crate::theme::SPACE_2);
                     ui.label(t!(
                         "about.author",
                         author = "Moreno Razzoli a.k.a. Morrolinux"

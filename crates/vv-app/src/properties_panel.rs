@@ -50,7 +50,7 @@ pub(crate) fn keyed_section_header(
         egui::pos2(rect.left() + 16.0, rect.center().y),
         egui::Align2::LEFT_CENTER,
         title,
-        egui::FontId::proportional(13.0),
+        egui::FontId::proportional(crate::theme::FONT_SECTION),
         ui.visuals().strong_text_color(),
     );
     let mut reset = false;
@@ -221,7 +221,7 @@ pub(crate) fn title_editor(
                 )
                 .changed();
         });
-        ui.add_space(4.0);
+        ui.add_space(crate::theme::SPACE_1);
 
         let row = param_row(ui, &t!("props.font"), None, |ui| {
             let mut items = vec![(String::new(), "Sans-serif".to_string(), true)];
@@ -450,7 +450,7 @@ pub(crate) fn title_editor(
             &mut offset_row,
         );
 
-        ui.add_space(8.0);
+        ui.add_space(crate::theme::SPACE_2);
         let bg = &mut title.background;
         if title_section_header(ui, &t!("props.background"), &mut bg.enabled) {
             *bg = vv_core::TitleBackground {
@@ -514,7 +514,7 @@ pub(crate) fn title_editor(
 
 /// Plain title of a group of rows inside a section: it does not fold.
 fn subsection_title(ui: &mut egui::Ui, title: &str) {
-    ui.add_space(6.0);
+    ui.add_space(crate::theme::SPACE_2);
     ui.label(egui::RichText::new(title).strong());
 }
 
@@ -1635,7 +1635,7 @@ impl VenturiApp {
         let mut transition = before.clone();
         let fps = tl.fps.as_f64().max(1.0);
 
-        ui.heading(t!("props.transition"));
+        crate::ui_kit::heading(ui, t!("props.transition"));
         match transition.asset.as_ref().and_then(|fx| {
             vv_render::assets::library()
                 .get(&fx.id)
@@ -1721,7 +1721,7 @@ impl VenturiApp {
             ));
         }
 
-        ui.add_space(8.0);
+        ui.add_space(crate::theme::SPACE_2);
         if ui.button(t!("props.remove_transition")).clicked() {
             pending.push(set_transition_command(
                 &self.session.project,
@@ -1823,7 +1823,7 @@ impl VenturiApp {
                                     } else {
                                         properties_tabs::VideoSubTab::Basic
                                     };
-                                    ui.add_space(6.0);
+                                    ui.add_space(crate::theme::SPACE_2);
                                     let show_base = tab == properties_tabs::ClipTab::Video
                                         && sub == properties_tabs::VideoSubTab::Basic;
                                     let show_mask = tab == properties_tabs::ClipTab::Video
@@ -1942,7 +1942,7 @@ impl VenturiApp {
                                                     .map(|c| c.timeline_frame_at(source_frame));
                                             }
                                             // A shortcut to the filter, edited in its section below.
-                                            ui.add_space(8.0);
+                                            ui.add_space(crate::theme::SPACE_2);
                                             let had_shadow = info.filters.iter().any(|f| f.kind == vv_core::FilterKind::DropShadow);
                                             let mut shadow = had_shadow;
                                             title_section_header(ui, &t!("props.drop_shadow"), &mut shadow);
@@ -1951,11 +1951,11 @@ impl VenturiApp {
                                                 let titles: Vec<_> = targets.iter().filter(|t| t.is_text).cloned().collect();
                                                 pending_effects.extend(toggle_filter_commands(tl, &titles, vv_core::FilterKind::DropShadow, shadow));
                                             }
-                                            ui.add_space(6.0);
+                                            ui.add_space(crate::theme::SPACE_2);
                                             if ui.button(t!("ribbon.save_template")).clicked() {
                                                 self.save_text_template(before.clone());
                                             }
-                                            ui.add_space(6.0);
+                                            ui.add_space(crate::theme::SPACE_2);
                                             properties_tabs::text_placeholders(ui);
                                     }
                                     match self.properties_tab {
@@ -2162,7 +2162,7 @@ impl VenturiApp {
                                             self.show_align_row(ui, targets, &info, &mut pending_effects);
                                             }
 
-                                            ui.add_space(6.0);
+                                            ui.add_space(crate::theme::SPACE_2);
                                             let header = keyed_section_header(ui, &t!("props.cropping"), true, all_keyed(&CROP_PARAMS));
                                             let (open, reset) = (header.open, header.reset);
                                             if header.toggled_keyframe {
@@ -2223,7 +2223,7 @@ impl VenturiApp {
                                             rows.push((softness_params, row));
                                             }
 
-                                            ui.add_space(6.0);
+                                            ui.add_space(crate::theme::SPACE_2);
                                             let mut blend_mode = info.blend_mode;
                                             let mut blend_changed = false;
                                             let mut matte = info.matte;
@@ -2312,7 +2312,7 @@ impl VenturiApp {
                                             rows.push((opacity_params, row));
                                             }
                                             if info.tintable {
-                                                ui.add_space(6.0);
+                                                ui.add_space(crate::theme::SPACE_2);
                                                 if let Some(choice) = crate::stickers_ui::sticker_color_section(ui, info.tint) {
                                                     let tl = self.timeline_id.map(|id| &self.session.project.timelines[id]);
                                                     pending_effects.extend(set_tint_commands(tl, targets, choice));
@@ -2404,7 +2404,7 @@ impl VenturiApp {
                                             // dragged onto the clip from the Effects
                                             // panel; empty until there is one.
                                             if tab == properties_tabs::ClipTab::Adjust && !info.filters.is_empty() {
-                                                ui.add_space(6.0);
+                                                ui.add_space(crate::theme::SPACE_2);
                                                 let (open, _) = section_header(ui, &t!("props.filters"), false);
                                                 for filter in info.filters.iter().filter(|_| open) {
                                                     let kind = filter.kind;
@@ -2763,7 +2763,7 @@ impl VenturiApp {
                                             if is_solid_color && show_base {
                                                 let solid: Vec<&PanelTarget> =
                                                     targets.iter().filter(|t| t.is_solid_color).collect();
-                                                ui.add_space(6.0);
+                                                ui.add_space(crate::theme::SPACE_2);
                                                 ui.horizontal(|ui| {
                                                     ui.label(egui::RichText::new(t!("props.color")).strong());
                                                     if keyframe_button(ui, color_kf_here).clicked()

@@ -173,13 +173,7 @@ pub(crate) fn template_name(id: &str) -> std::borrow::Cow<'static, str> {
 }
 
 fn primary_button(ui: &mut egui::Ui, text: String, enabled: bool) -> egui::Response {
-    let button = egui::Button::new(
-        egui::RichText::new(text)
-            .color(theme::ON_ACCENT)
-            .size(theme::FONT_BODY),
-    )
-    .fill(theme::ACCENT_FILL)
-    .min_size(egui::vec2(0.0, theme::FIELD_HEIGHT));
+    let button = crate::ui_kit::primary_button(text).min_size(egui::vec2(0.0, theme::FIELD_HEIGHT));
     ui.add_enabled(enabled, button)
 }
 
@@ -314,11 +308,7 @@ impl VenturiApp {
                     (TemplateCategory::WordByWord, t!("subtitles.category_word")),
                     (TemplateCategory::Line, t!("subtitles.category_line")),
                 ] {
-                    ui.label(
-                        egui::RichText::new(title)
-                            .size(theme::FONT_SECTION)
-                            .color(theme::TEXT_PRIMARY),
-                    );
+                    ui.label(crate::ui_kit::section_title(title));
                     ui.add_space(theme::SPACE_1);
                     ui.horizontal_wrapped(|ui| {
                         for template in TEMPLATES.iter().filter(|t| t.category == category) {
@@ -339,11 +329,9 @@ impl VenturiApp {
                     });
                     ui.add_space(theme::SPACE_2);
                 }
-                ui.label(
-                    egui::RichText::new(t!("subtitles.category_text_styles"))
-                        .size(theme::FONT_SECTION)
-                        .color(theme::TEXT_PRIMARY),
-                );
+                ui.label(crate::ui_kit::section_title(t!(
+                    "subtitles.category_text_styles"
+                )));
                 ui.add_space(theme::SPACE_1);
                 ui.horizontal_wrapped(|ui| {
                     let styles = self.text_style_choices(resolution);

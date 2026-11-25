@@ -11,7 +11,7 @@ use crate::projects::{self, Aspect, ProjectFsError, ProjectSummary};
 
 const CARD_WIDTH: f32 = 220.0;
 const COVER_HEIGHT: f32 = CARD_WIDTH * 9.0 / 16.0;
-const CARD_HEIGHT: f32 = COVER_HEIGHT + 78.0;
+const CARD_HEIGHT: f32 = COVER_HEIGHT + 64.0;
 const CARD_GAP: f32 = 16.0;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -195,26 +195,31 @@ impl VenturiApp {
         self.home.poll(&ctx);
 
         let mut action = None;
-        egui::Panel::top("home_bar").show(ui, |ui| self.home_bar(ui, root.as_deref(), &mut action));
+        egui::Panel::top("home_bar")
+            .frame(
+                egui::Frame::NONE
+                    .fill(theme::BG_WINDOW)
+                    .inner_margin(egui::Margin::symmetric(
+                        theme::SPACE_4 as i8,
+                        theme::SPACE_2 as i8,
+                    ))
+                    .stroke(egui::Stroke::new(1.0, theme::BORDER_SUBTLE)),
+            )
+            .show(ui, |ui| self.home_bar(ui, root.as_deref(), &mut action));
         egui::CentralPanel::default()
             .frame(
                 egui::Frame::NONE
                     .fill(theme::BG_WINDOW)
-                    .inner_margin(egui::Margin::same(theme::SPACE_4 as i8)),
+                    .inner_margin(egui::Margin::same(theme::SPACE_5 as i8)),
             )
             .show(ui, |ui| {
                 paint_home_backdrop(ui);
                 if home_banner(ui) {
                     action = Some(HomeAction::NewProject);
                 }
-                ui.add_space(theme::SPACE_4);
-                ui.label(
-                    egui::RichText::new(t!("home.projects_section"))
-                        .size(theme::FONT_SECTION)
-                        .strong()
-                        .color(theme::TEXT_PRIMARY),
-                );
-                ui.add_space(theme::SPACE_2);
+                ui.add_space(theme::SPACE_5);
+                self.home_filters(ui);
+                ui.add_space(theme::SPACE_3);
                 self.home_grid(ui, &mut action);
             });
         self.show_rename_dialog(&ctx);
@@ -230,32 +235,9 @@ impl VenturiApp {
         root: Option<&Path>,
         action: &mut Option<HomeAction>,
     ) {
-        ui.add_space(6.0);
         ui.horizontal(|ui| {
-            ui.heading(t!("home.title"));
-            ui.add_space(12.0);
-            ui.add(
-                egui::TextEdit::singleline(&mut self.home.search)
-                    .hint_text(t!("home.search_hint"))
-                    .desired_width(220.0),
-            );
-            let sort = &mut self.home.sort;
-            egui::ComboBox::from_id_salt("home_sort")
-                .selected_text(t!("home.sort", order = sort.label()))
-                .show_ui(ui, |ui| {
-                    for option in HomeSort::ALL {
-                        ui.selectable_value(sort, option, option.label());
-                    }
-                });
-            let aspect = &mut self.home.aspect;
-            egui::ComboBox::from_id_salt("home_format")
-                .selected_text(t!("home.format", format = aspect_label(*aspect)))
-                .show_ui(ui, |ui| {
-                    ui.selectable_value(aspect, None, aspect_label(None));
-                    for option in Aspect::ALL {
-                        ui.selectable_value(aspect, Some(option), aspect_label(Some(option)));
-                    }
-                });
+            ui.set_min_height(theme::FIELD_HEIGHT);
+            crate::ui_kit::heading(ui, "Tandem");
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui
                     .button(t!("home.import_project"))
@@ -264,19 +246,50 @@ impl VenturiApp {
                 {
                     *action = Some(HomeAction::ImportProject);
                 }
+                if ui.button(t!("home.change_folder")).clicked() {
+                    *action = Some(HomeAction::ChooseFolder);
+                }
+                let folder = root.map_or_else(
+                    || t!("home.no_folder").into_owned(),
+                    |root| root.display().to_string(),
+                );
+                ui.add(
+                    egui::Label::new(crate::ui_kit::hint(t!("home.folder", folder = folder)))
+                        .truncate(),
+                );
             });
         });
+    }
+
+    /// Section title on the left, search and filters on the right.
+    fn home_filters(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
-            let folder = root.map_or_else(
-                || t!("home.no_folder").into_owned(),
-                |root| root.display().to_string(),
-            );
-            ui.weak(t!("home.folder", folder = folder));
-            if ui.small_button(t!("home.change_folder")).clicked() {
-                *action = Some(HomeAction::ChooseFolder);
-            }
+            ui.label(crate::ui_kit::section_title(t!("home.projects_section")));
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                let aspect = &mut self.home.aspect;
+                egui::ComboBox::from_id_salt("home_format")
+                    .selected_text(t!("home.format", format = aspect_label(*aspect)))
+                    .show_ui(ui, |ui| {
+                        ui.selectable_value(aspect, None, aspect_label(None));
+                        for option in Aspect::ALL {
+                            ui.selectable_value(aspect, Some(option), aspect_label(Some(option)));
+                        }
+                    });
+                let sort = &mut self.home.sort;
+                egui::ComboBox::from_id_salt("home_sort")
+                    .selected_text(t!("home.sort", order = sort.label()))
+                    .show_ui(ui, |ui| {
+                        for option in HomeSort::ALL {
+                            ui.selectable_value(sort, option, option.label());
+                        }
+                    });
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.home.search)
+                        .hint_text(t!("home.search_hint"))
+                        .desired_width(220.0),
+                );
+            });
         });
-        ui.add_space(6.0);
     }
 
     fn home_grid(&mut self, ui: &mut egui::Ui, action: &mut Option<HomeAction>) {
@@ -293,7 +306,7 @@ impl VenturiApp {
             ui.vertical_centered(|ui| {
                 ui.add_space(ui.available_height() / 3.0);
                 if home.cards.is_empty() {
-                    ui.heading(t!("home.empty"));
+                    crate::ui_kit::heading(ui, t!("home.empty"));
                 } else {
                     ui.label(t!("home.no_match"));
                 }
@@ -368,15 +381,15 @@ impl VenturiApp {
         let mut confirm = false;
         let mut cancel = false;
         let modal = egui::Modal::new(egui::Id::new("home_rename")).show(ctx, |ui| {
-            ui.heading(t!("home.rename_title"));
-            ui.add_space(4.0);
+            crate::ui_kit::heading(ui, t!("home.rename_title"));
+            ui.add_space(crate::theme::SPACE_1);
             let edit = ui.add(egui::TextEdit::singleline(&mut dialog.name).desired_width(280.0));
             edit.request_focus();
             confirm = ui.input(|i| i.key_pressed(egui::Key::Enter));
             if let Some(error) = &dialog.error {
                 ui.colored_label(theme::ERROR, error);
             }
-            ui.add_space(8.0);
+            ui.add_space(crate::theme::SPACE_2);
             ui.horizontal(|ui| {
                 confirm |= ui.button(t!("home.rename")).clicked();
                 cancel = ui.button(t!("common.cancel")).clicked();
@@ -413,12 +426,12 @@ impl VenturiApp {
         let mut confirm = false;
         let mut cancel = false;
         let modal = egui::Modal::new(egui::Id::new("home_delete")).show(ctx, |ui| {
-            ui.heading(t!(
-                "home.delete_title",
-                name = projects::project_name(&file)
-            ));
+            crate::ui_kit::heading(
+                ui,
+                t!("home.delete_title", name = projects::project_name(&file)),
+            );
             ui.label(t!("home.delete_detail"));
-            ui.add_space(8.0);
+            ui.add_space(crate::theme::SPACE_2);
             ui.horizontal(|ui| {
                 let delete = egui::Button::new(
                     egui::RichText::new(t!("home.delete")).color(egui::Color32::WHITE),
@@ -534,9 +547,9 @@ impl VenturiApp {
         };
         let mut close = false;
         let modal = egui::Modal::new(egui::Id::new("recovered_project")).show(ctx, |ui| {
-            ui.heading(t!("project.recovered_title"));
+            crate::ui_kit::heading(ui, t!("project.recovered_title"));
             ui.label(t!("project.recovered", name = name));
-            ui.add_space(8.0);
+            ui.add_space(crate::theme::SPACE_2);
             close = ui.button(t!("common.close")).clicked();
         });
         if close || modal.should_close() {
@@ -673,7 +686,7 @@ fn home_banner(ui: &mut egui::Ui) -> bool {
         egui::pos2(plus.right() + theme::SPACE_3, center.y),
         egui::Align2::LEFT_CENTER,
         t!("home.new_project"),
-        egui::FontId::proportional(20.0),
+        egui::FontId::proportional(crate::theme::FONT_DISPLAY),
         BANNER_TEXT,
     );
     response
@@ -686,15 +699,9 @@ fn card_ui(ui: &mut egui::Ui, card: &HomeCard) -> Option<HomeAction> {
     let (rect, response) =
         ui.allocate_exact_size(egui::vec2(CARD_WIDTH, CARD_HEIGHT), egui::Sense::click());
     let visuals = ui.visuals().clone();
-    let fill = if response.hovered() {
-        visuals.widgets.hovered.weak_bg_fill
-    } else {
-        egui::Color32::TRANSPARENT
-    };
-    ui.painter().rect_filled(rect, theme::RADIUS_PANEL, fill);
     let cover_rect = egui::Rect::from_min_size(rect.min, egui::vec2(CARD_WIDTH, COVER_HEIGHT));
     ui.painter()
-        .rect_filled(cover_rect, theme::RADIUS_CLIP, egui::Color32::BLACK);
+        .rect_filled(cover_rect, theme::RADIUS_PANEL, theme::BG_INSET);
     match &card.cover {
         Some(texture) => {
             let size = texture.size_vec2();
@@ -711,10 +718,18 @@ fn card_ui(ui: &mut egui::Ui, card: &HomeCard) -> Option<HomeAction> {
                 cover_rect.center(),
                 egui::Align2::CENTER_CENTER,
                 t!("home.no_preview"),
-                egui::FontId::proportional(13.0),
+                egui::FontId::proportional(theme::FONT_SMALL),
                 visuals.weak_text_color(),
             );
         }
+    }
+    if response.hovered() {
+        ui.painter().rect_stroke(
+            cover_rect,
+            theme::RADIUS_PANEL,
+            egui::Stroke::new(1.5, theme::ACCENT),
+            egui::StrokeKind::Inside,
+        );
     }
 
     let mut chosen = None;
@@ -730,10 +745,15 @@ fn card_ui(ui: &mut egui::Ui, card: &HomeCard) -> Option<HomeAction> {
     response.context_menu(|ui| card_menu(ui, &summary.file, &mut chosen));
 
     let text_rect = egui::Rect::from_min_max(
-        egui::pos2(rect.left() + 8.0, cover_rect.bottom() + 6.0),
-        rect.max - egui::vec2(8.0, 4.0),
+        egui::pos2(rect.left() + 2.0, cover_rect.bottom() + theme::SPACE_2),
+        rect.max - egui::vec2(2.0, 0.0),
     );
-    ui.scope_builder(egui::UiBuilder::new().max_rect(text_rect), |ui| {
+    // The card sits in a horizontal row: without an explicit layout the lines
+    // would be laid out side by side.
+    let text_ui = egui::UiBuilder::new()
+        .max_rect(text_rect)
+        .layout(egui::Layout::top_down(egui::Align::Min));
+    ui.scope_builder(text_ui, |ui| {
         ui.spacing_mut().item_spacing.y = 2.0;
         ui.add(
             egui::Label::new(

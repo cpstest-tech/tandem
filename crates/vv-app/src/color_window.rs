@@ -91,7 +91,7 @@ pub(crate) fn show_color_window(
                             rect.center(),
                             egui::Align2::CENTER_CENTER,
                             t!("color.no_scope_source"),
-                            egui::FontId::proportional(12.0),
+                            egui::FontId::proportional(crate::theme::FONT_BODY),
                             egui::Color32::from_white_alpha(110),
                         );
                     } else if let Some((id, _)) = &view.textures[slot]
@@ -136,7 +136,7 @@ pub(crate) fn show_color_window(
 fn graticule(painter: &egui::Painter, rect: egui::Rect, kind: ScopeKind) {
     let line = egui::Stroke::new(1.0, egui::Color32::from_white_alpha(40));
     let text = egui::Color32::from_white_alpha(110);
-    let font = egui::FontId::proportional(10.0);
+    let font = egui::FontId::proportional(crate::theme::FONT_TINY);
     match kind {
         ScopeKind::Waveform | ScopeKind::Parade => {
             for percent in [0, 25, 50, 75, 100] {

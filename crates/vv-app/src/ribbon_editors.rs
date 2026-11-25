@@ -33,11 +33,7 @@ impl VenturiApp {
             if back.clicked() {
                 self.library_ribbon.editor = None;
             }
-            ui.label(
-                egui::RichText::new(title)
-                    .size(theme::FONT_SECTION)
-                    .color(theme::TEXT_PRIMARY),
-            );
+            ui.label(crate::ui_kit::section_title(title));
         });
         ui.separator();
         let (video_targets, audio_targets) = self.selection_targets();

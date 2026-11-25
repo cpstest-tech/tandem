@@ -319,7 +319,7 @@ impl ExportModal {
             .max(MIN_BODY_HEIGHT);
         let modal = egui::Modal::new(egui::Id::new("export_modal")).show(ctx, |ui| {
             ui.set_width(width);
-            ui.label(egui::RichText::new(t!("export.title")).size(theme::FONT_MODAL_TITLE));
+            crate::ui_kit::heading(ui, t!("export.title"));
             ui.add_space(theme::SPACE_3);
             match env.running {
                 Some(progress) => outcome = self.running_view(ui, progress),
@@ -729,11 +729,8 @@ impl ExportModal {
             );
             info_icon(ui, &t!("export.size_hint", audio = export_plan::AUDIO_KBPS));
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                let start = egui::Button::new(
-                    egui::RichText::new(t!("export.start")).color(theme::ON_ACCENT),
-                )
-                .fill(theme::ACCENT_FILL)
-                .corner_radius(theme::RADIUS_CONTROL);
+                let start = crate::ui_kit::primary_button(t!("export.start"))
+                    .min_size(egui::vec2(0.0, theme::FIELD_HEIGHT));
                 if ui.add_enabled(self.can_start(env), start).clicked() {
                     result = Some(false);
                 }
@@ -1106,12 +1103,7 @@ fn section_header(ui: &mut egui::Ui, on: &mut bool, open: &mut bool, title: &str
         if response.clicked() {
             *open = !*open;
         }
-        ui.checkbox(
-            on,
-            egui::RichText::new(title)
-                .size(theme::FONT_SECTION)
-                .color(theme::TEXT_PRIMARY),
-        );
+        ui.checkbox(on, crate::ui_kit::section_title(title));
     });
     *open
 }

@@ -765,7 +765,7 @@ fn draw_ruler(
                     clip.timeline_frame_at(frame) as f64 / fps,
                     fps,
                 ),
-                egui::FontId::proportional(10.0),
+                egui::FontId::proportional(crate::theme::FONT_TINY),
                 visuals.weak_text_color(),
             );
         }
@@ -816,7 +816,7 @@ fn draw_curve(
             plot.center(),
             egui::Align2::CENTER_CENTER,
             t!("keyframes.no_curve"),
-            egui::FontId::proportional(12.0),
+            egui::FontId::proportional(crate::theme::FONT_BODY),
             visuals.weak_text_color(),
         );
         return;
@@ -850,7 +850,7 @@ fn draw_curve(
             egui::pos2(plot.left() - 6.0, py),
             egui::Align2::RIGHT_CENTER,
             format!("{value:.2}"),
-            egui::FontId::proportional(10.0),
+            egui::FontId::proportional(crate::theme::FONT_TINY),
             visuals.weak_text_color(),
         );
     }
@@ -1172,7 +1172,7 @@ fn draw_rows(
             egui::pos2(r.left() + LABEL_WIDTH - 6.0, r.center().y),
             egui::Align2::RIGHT_CENTER,
             target_label(row),
-            egui::FontId::proportional(11.0),
+            egui::FontId::proportional(crate::theme::FONT_SMALL),
             if state.row == Some(row) {
                 visuals.strong_text_color()
             } else {

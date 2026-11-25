@@ -212,7 +212,7 @@ impl VenturiApp {
         let (mut confirm, mut cancel) = (false, false);
         let modal = egui::Modal::new(egui::Id::new("cover_picker")).show(ctx, |ui| {
             ui.set_width(420.0);
-            ui.label(egui::RichText::new(t!("cover.title")).size(theme::FONT_MODAL_TITLE));
+            crate::ui_kit::heading(ui, t!("cover.title"));
             ui.add_space(theme::SPACE_2);
             let preview = egui::vec2(ui.available_width(), 260.0);
             let (rect, _) = ui.allocate_exact_size(preview, egui::Sense::hover());

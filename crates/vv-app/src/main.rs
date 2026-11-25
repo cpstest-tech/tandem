@@ -97,6 +97,7 @@ mod timeline_ui;
 mod transcript;
 mod transcript_ui;
 mod transport;
+mod ui_kit;
 mod updater;
 mod updater_ui;
 mod vertical_layout;
@@ -3122,7 +3123,7 @@ impl VenturiApp {
                         screen.center(),
                         egui::Align2::CENTER_CENTER,
                         t!("viewer.media_offline"),
-                        egui::FontId::proportional(24.0),
+                        egui::FontId::proportional(crate::theme::FONT_DISPLAY),
                         theme::ERROR,
                     );
                 }
@@ -4299,7 +4300,7 @@ fn fix_iso_key(raw_input: &mut egui::RawInput, iso_key_down: &mut bool) {
 fn paint_keyframes_badge(painter: &egui::Painter, frame: egui::Rect) {
     let galley = painter.layout_no_wrap(
         t!("viewer.keyframes_badge").into_owned(),
-        egui::FontId::proportional(11.0),
+        egui::FontId::proportional(crate::theme::FONT_SMALL),
         egui::Color32::WHITE,
     );
     let badge = egui::Rect::from_min_size(
@@ -5185,13 +5186,17 @@ impl VenturiApp {
                 ui.centered_and_justified(|ui| {
                     ui.colored_label(
                         theme::ERROR,
-                        egui::RichText::new(t!("viewer.media_offline")).size(24.0),
+                        egui::RichText::new(t!("viewer.media_offline")).size(theme::FONT_DISPLAY),
                     );
                 });
             }
             None => {
                 if let Some(err) = &self.preview_error {
-                    ui.colored_label(egui::Color32::RED, t!("viewer.player_error", error = err));
+                    crate::ui_kit::status(
+                        ui,
+                        crate::ui_kit::Tone::Error,
+                        t!("viewer.player_error", error = err),
+                    );
                 } else if self.browsing_audio_only() {
                     let (rect, _) =
                         ui.allocate_exact_size(ui.available_size(), egui::Sense::hover());
