@@ -469,6 +469,9 @@ action.match_frame:
 action.close_gaps:
   en: "Close all gaps"
   it: "Chiudi tutti i buchi"
+action.ripple_tool:
+  en: "Ripple trim tool"
+  it: "Strumento ripple"
 settings.gemini_key:
   en: "Gemini API key (AI Clips)"
   it: "Chiave API Gemini (AI Clips)"

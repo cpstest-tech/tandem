@@ -80,6 +80,9 @@ pub enum TimelineTool {
     SelectLeft,
     /// A click on a clip selects it and everything starting after it.
     SelectRight,
+    /// Trimming an edge moves everything after it on every unlocked track,
+    /// so no gap opens and nothing is overwritten.
+    Ripple,
 }
 
 /// Something the timeline asks the app to do (bar, context menu): the app
@@ -5210,6 +5213,51 @@ fn retime_bar(
     action
 }
 
+/// The moves of a ripple trim: everything after the trimmed edge, on every
+/// unlocked track, follows it; a trimmed start keeps the clip where it was
+/// and pulls the rest by the same amount.
+fn ripple_trim_moves(
+    tl: &vv_core::Timeline,
+    trims: &[(ClipId, usize, TrimEdge, FrameIdx)],
+) -> Vec<(ClipId, usize, usize, FrameIdx)> {
+    let Some(&(clip_id, track, edge, new_value)) = trims.first() else {
+        return Vec::new();
+    };
+    let Some(clip) = tl.clip(track, clip_id) else {
+        return Vec::new();
+    };
+    let old_end = clip.timeline_end();
+    let delta = match edge {
+        TrimEdge::End => new_value - old_end,
+        TrimEdge::Start => clip.timeline_start - new_value,
+    };
+    if delta == 0 {
+        return Vec::new();
+    }
+    let trimmed: BTreeSet<ClipId> = trims.iter().map(|t| t.0).collect();
+    let mut moves: Vec<(ClipId, usize, usize, FrameIdx)> = tl
+        .tracks
+        .iter()
+        .enumerate()
+        .filter(|(_, t)| !t.locked)
+        .flat_map(|(i, t)| {
+            t.clips
+                .iter()
+                .filter(|c| c.timeline_start >= old_end && !trimmed.contains(&c.id))
+                .map(move |c| (c.id, i, i, (c.timeline_start + delta).max(0)))
+        })
+        .collect();
+    if edge == TrimEdge::Start {
+        // `tl` is before the trim: the trimmed clips go back to that start.
+        for &(id, t, _, _) in trims {
+            if let Some(c) = tl.clip(t, id) {
+                moves.push((id, t, t, c.timeline_start));
+            }
+        }
+    }
+    moves
+}
+
 /// Starts the trim of `visual` from the edge zone `zone`, with the clips
 /// following it.
 /// With the magnet on, the Main Track ripples: a grown clip pushes the next
@@ -5225,6 +5273,12 @@ fn begin_trim(
     visual: &ClipVisual,
     zone: EdgeZone,
 ) {
+    // A ripple trim moves the neighbour instead of rolling into it.
+    let zone = if state.tool == TimelineTool::Ripple {
+        EdgeZone::Trim(zone.edge())
+    } else {
+        zone
+    };
     let edge = zone.edge();
     let key = (visual.track_index, visual.clip.id);
     let others: Vec<(ClipKey, TrimEdge)> = match zone {
@@ -5251,8 +5305,16 @@ fn begin_trim(
                 .collect()
         }
     };
-    let (min_value, max_value, followers) =
-        combined_trim_range(visuals, project, key, edge, &others, ripple_track(state));
+    let ripple_all = state.tool == TimelineTool::Ripple;
+    let (min_value, max_value, followers) = combined_trim_range(
+        visuals,
+        project,
+        key,
+        edge,
+        &others,
+        ripple_track(state),
+        ripple_all,
+    );
     let original_value = match edge {
         TrimEdge::Start => visual.clip.timeline_start,
         TrimEdge::End => visual.clip.timeline_end(),
@@ -6608,6 +6670,12 @@ fn apply_pending_action(
             if let Some(ripple) = ripple_track(state) {
                 overwritten.retain(|&(track, _, _)| track != ripple);
             }
+            let ripple_moves = if state.tool == TimelineTool::Ripple {
+                overwritten.clear();
+                ripple_trim_moves(&project.timelines[timeline_id], &trims)
+            } else {
+                Vec::new()
+            };
             // The stretch gained by lengthening overwrites what was there; the trimmed
             // clips stay out, or they would cut themselves.
             let exclude: Vec<(usize, ClipId)> = trims
@@ -6635,6 +6703,9 @@ fn apply_pending_action(
                         )) as Box<dyn vv_core::Command>
                     }),
             );
+            if !ripple_moves.is_empty() {
+                commands.push(Box::new(vv_core::MoveClips::new(timeline_id, ripple_moves)));
+            }
             history.do_command(
                 project,
                 Box::new(vv_core::CompositeCommand::new(
@@ -7874,6 +7945,7 @@ fn combined_trim_range(
     edge: TrimEdge,
     others: &[(ClipKey, TrimEdge)],
     ripple_track: Option<usize>,
+    ripple_all: bool,
 ) -> (FrameIdx, FrameIdx, Vec<TrimFollower>) {
     let find = |(track, id): ClipKey| {
         visuals
@@ -7900,6 +7972,7 @@ fn combined_trim_range(
         let (mut o_min, mut o_max) = vv_core::edit::trim_range(project, &v.clip, v_edge);
         for n in visuals.iter().filter(|n| {
             n.track_index == v.track_index
+                && !ripple_all
                 && Some(n.track_index) != ripple_track
                 && n.clip.id != v.clip.id
                 && !trimmed

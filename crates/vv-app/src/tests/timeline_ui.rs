@@ -1198,6 +1198,7 @@ fn combined_trim_range_intersects_both_clips_constraints() {
         TrimEdge::End,
         &[((1, ClipId(2)), TrimEdge::End)],
         None,
+        false,
     );
     assert_eq!(
         max_value, 35,
@@ -1219,6 +1220,7 @@ fn combined_trim_range_shifts_each_selected_clip_by_its_offset() {
         TrimEdge::End,
         &[((1, ClipId(2)), TrimEdge::End)],
         None,
+        false,
     );
     assert_eq!(followers, vec![(ClipId(2), 1, 15, TrimEdge::End)]);
     assert_eq!(min_value, 6, "21 - 15");
@@ -1236,6 +1238,7 @@ fn combined_trim_range_stops_before_another_trimmed_clip_on_the_same_track() {
         TrimEdge::End,
         &[((0, ClipId(2)), TrimEdge::End)],
         None,
+        false,
     );
     assert_eq!(max_value, 20);
 }
@@ -1263,6 +1266,7 @@ fn combined_trim_range_rolls_between_two_adjacent_clips() {
         TrimEdge::Start,
         &[((0, ClipId(1)), TrimEdge::End)],
         None,
+        false,
     );
     assert_eq!((min_value, max_value), (5, 24));
     assert_eq!(followers, vec![(ClipId(1), 0, 0, TrimEdge::End)]);
@@ -1998,8 +2002,15 @@ fn keyframe_diamonds_follow_the_transform_keyframes_inside_the_clip() {
 fn trimming_an_end_stops_against_the_next_clip() {
     let project = Project::default();
     let visuals = vec![visual(0, 1, 0, 10), visual(0, 2, 20, 5)];
-    let (_, max_value, _) =
-        combined_trim_range(&visuals, &project, (0, ClipId(1)), TrimEdge::End, &[], None);
+    let (_, max_value, _) = combined_trim_range(
+        &visuals,
+        &project,
+        (0, ClipId(1)),
+        TrimEdge::End,
+        &[],
+        None,
+        false,
+    );
     assert_eq!(max_value, 20);
     let (_, max_value, _) = combined_trim_range(
         &visuals,
@@ -2008,6 +2019,7 @@ fn trimming_an_end_stops_against_the_next_clip() {
         TrimEdge::End,
         &[],
         Some(0),
+        false,
     );
     assert!(max_value > 20, "the rippling Main Track pushes instead");
 }
@@ -2030,4 +2042,43 @@ fn a_move_on_the_rippling_main_track_inserts_at_the_nearest_clip_start() {
         (300, 300),
         "after the last clip"
     );
+}
+
+#[test]
+fn a_ripple_trim_moves_what_follows_on_every_track() {
+    let mut tl = vv_core::Timeline {
+        name: "T".into(),
+        fps: vv_core::Rational::new(25, 1),
+        resolution: (1920, 1080),
+        tracks: vec![
+            vv_core::Track::new(TrackKind::Video),
+            vv_core::Track::new(TrackKind::Audio),
+        ],
+        markers: Vec::new(),
+        master: Default::default(),
+    };
+    let clip = |id: u64, start: FrameIdx, len: FrameIdx| {
+        Clip::from_source_range(
+            ClipId(id),
+            vv_core::ClipSource::SolidColor,
+            0,
+            len,
+            start,
+            vv_core::Rational::one(),
+        )
+    };
+    tl.tracks[0].insert_sorted(clip(1, 0, 50));
+    tl.tracks[0].insert_sorted(clip(2, 50, 50));
+    tl.tracks[1].insert_sorted(clip(3, 60, 20));
+    tl.tracks[1].insert_sorted(clip(4, 10, 20));
+    let grown = ripple_trim_moves(&tl, &[(ClipId(1), 0, TrimEdge::End, 70)]);
+    assert!(grown.contains(&(ClipId(2), 0, 0, 70)));
+    assert!(grown.contains(&(ClipId(3), 1, 1, 80)));
+    assert!(
+        !grown.iter().any(|m| m.0 == ClipId(4)),
+        "it starts before the edge"
+    );
+    let start = ripple_trim_moves(&tl, &[(ClipId(1), 0, TrimEdge::Start, 10)]);
+    assert!(start.contains(&(ClipId(1), 0, 0, 0)), "the clip stays put");
+    assert!(start.contains(&(ClipId(2), 0, 0, 40)));
 }

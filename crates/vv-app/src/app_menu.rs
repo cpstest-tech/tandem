@@ -105,6 +105,7 @@ impl VenturiApp {
                     timeline_ui::TimelineTool::SelectRight,
                 ),
                 (Action::SlipTool, timeline_ui::TimelineTool::Slip),
+                (Action::RippleTool, timeline_ui::TimelineTool::Ripple),
             ] {
                 if pressed(action) {
                     self.set_timeline_tool(tool);

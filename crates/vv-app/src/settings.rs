@@ -87,10 +87,11 @@ pub enum Action {
     NudgeRight10,
     MatchFrame,
     CloseGaps,
+    RippleTool,
 }
 
 impl Action {
-    pub const ALL: [Action; 73] = [
+    pub const ALL: [Action; 74] = [
         Action::TogglePlayback,
         Action::FastPlayback,
         Action::StepBackward,
@@ -164,6 +165,7 @@ impl Action {
         Action::NudgeRight10,
         Action::MatchFrame,
         Action::CloseGaps,
+        Action::RippleTool,
     ];
 
     /// Key in the settings file: must never be changed.
@@ -242,6 +244,7 @@ impl Action {
             Action::NudgeRight10 => "nudge_right_10",
             Action::MatchFrame => "match_frame",
             Action::CloseGaps => "close_gaps",
+            Action::RippleTool => "ripple_tool",
         }
     }
 
@@ -324,6 +327,7 @@ impl Action {
             | Action::TogglePreviewAxis
             | Action::ToggleLinkage
             | Action::MatchFrame
+            | Action::RippleTool
             | Action::FitTimeline
             | Action::MakeCompound
             | Action::UngroupCompound => {
@@ -461,6 +465,7 @@ impl Action {
             Action::NudgeLeft10 => vec![ctrl_shift(Key::ArrowLeft)],
             Action::NudgeRight10 => vec![ctrl_shift(Key::ArrowRight)],
             Action::MatchFrame => vec![plain(Key::F)],
+            Action::RippleTool => vec![plain(Key::R)],
             Action::CloseGaps => vec![Shortcut {
                 alt: true,
                 ..plain(Key::Backspace)

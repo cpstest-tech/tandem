@@ -404,6 +404,10 @@ timeline_bar.mode_slip:
   en: "Slip"
   it: "Slip"
 
+timeline_bar.mode_ripple:
+  en: "Ripple trim"
+  it: "Ripple trim"
+
 timeline_bar.zoom_in:
   en: "Zoom in"
   it: "Ingrandisci"
