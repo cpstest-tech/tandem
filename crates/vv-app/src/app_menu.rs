@@ -151,6 +151,13 @@ impl VenturiApp {
             if pressed(Action::MatchFrame) {
                 self.match_frame();
             }
+            if let Some(angle) = Action::ALL
+                .into_iter()
+                .filter_map(|a| a.angle().filter(|_| pressed(a)))
+                .next()
+            {
+                self.switch_angle(angle);
+            }
             if pressed(Action::LiftRange) {
                 self.delete_marked_range(false);
             }
@@ -1181,6 +1188,7 @@ fn command_label(label: vv_core::CommandLabel) -> std::borrow::Cow<'static, str>
         L::ReverseClips => t!("history.reverse_clips"),
         L::VoiceEffect => t!("props.voice_changer"),
         L::ReplaceClip => t!("action.replace_edit"),
+        L::SwitchAngle => t!("history.switch_angle"),
         L::RemoveSilences => t!("history.remove_silences"),
         L::AutoCut => t!("auto_cut.title"),
         L::TextCut => t!("transcript.history_cut"),

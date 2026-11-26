@@ -4,8 +4,8 @@ sync.menu:
   en: "Sync by audio"
   it: "Sincronizza con l'audio"
 sync.pick_two:
-  en: "Select two clips (or linked groups) that recorded the same sound."
-  it: "Seleziona due clip (o gruppi collegati) che hanno registrato lo stesso suono."
+  en: "Select two or more clips (or linked groups) that recorded the same sound."
+  it: "Seleziona due o più clip (o gruppi collegati) che hanno registrato lo stesso suono."
 sync.no_audio:
   en: "Both clips need audio to sync."
   it: "Entrambi i clip devono avere l'audio per sincronizzarli."
@@ -15,6 +15,6 @@ sync.working:
 sync.no_match:
   en: "The two recordings do not seem to match."
   it: "Le due registrazioni non sembrano corrispondere."
-sync.done:
-  en: "Synced: moved by %{frames} frames."
-  it: "Sincronizzati: spostato di %{frames} frame."
+sync.done_count:
+  en: "Synced %{count} clips (%{failed} without a match). Keys 1–9 switch angle at the playhead."
+  it: "Sincronizzati %{count} clip (%{failed} senza corrispondenza). I tasti 1–9 cambiano angolazione alla testina."

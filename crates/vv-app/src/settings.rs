@@ -92,10 +92,19 @@ pub enum Action {
     RangeTool,
     LiftRange,
     RippleRange,
+    SwitchAngle1,
+    SwitchAngle2,
+    SwitchAngle3,
+    SwitchAngle4,
+    SwitchAngle5,
+    SwitchAngle6,
+    SwitchAngle7,
+    SwitchAngle8,
+    SwitchAngle9,
 }
 
 impl Action {
-    pub const ALL: [Action; 78] = [
+    pub const ALL: [Action; 87] = [
         Action::TogglePlayback,
         Action::FastPlayback,
         Action::StepBackward,
@@ -174,6 +183,15 @@ impl Action {
         Action::RangeTool,
         Action::LiftRange,
         Action::RippleRange,
+        Action::SwitchAngle1,
+        Action::SwitchAngle2,
+        Action::SwitchAngle3,
+        Action::SwitchAngle4,
+        Action::SwitchAngle5,
+        Action::SwitchAngle6,
+        Action::SwitchAngle7,
+        Action::SwitchAngle8,
+        Action::SwitchAngle9,
     ];
 
     /// Key in the settings file: must never be changed.
@@ -257,6 +275,15 @@ impl Action {
             Action::RangeTool => "range_tool",
             Action::LiftRange => "lift_range",
             Action::RippleRange => "ripple_range",
+            Action::SwitchAngle1 => "switch_angle_1",
+            Action::SwitchAngle2 => "switch_angle_2",
+            Action::SwitchAngle3 => "switch_angle_3",
+            Action::SwitchAngle4 => "switch_angle_4",
+            Action::SwitchAngle5 => "switch_angle_5",
+            Action::SwitchAngle6 => "switch_angle_6",
+            Action::SwitchAngle7 => "switch_angle_7",
+            Action::SwitchAngle8 => "switch_angle_8",
+            Action::SwitchAngle9 => "switch_angle_9",
         }
     }
 
@@ -344,6 +371,15 @@ impl Action {
             | Action::MatchFrame
             | Action::RippleTool
             | Action::RangeTool
+            | Action::SwitchAngle1
+            | Action::SwitchAngle2
+            | Action::SwitchAngle3
+            | Action::SwitchAngle4
+            | Action::SwitchAngle5
+            | Action::SwitchAngle6
+            | Action::SwitchAngle7
+            | Action::SwitchAngle8
+            | Action::SwitchAngle9
             | Action::FitTimeline
             | Action::MakeCompound
             | Action::UngroupCompound => {
@@ -488,6 +524,15 @@ impl Action {
                 ..plain(Key::Delete)
             }],
             Action::RippleRange => vec![ctrl(Key::Delete)],
+            Action::SwitchAngle1 => vec![plain(Key::Num1)],
+            Action::SwitchAngle2 => vec![plain(Key::Num2)],
+            Action::SwitchAngle3 => vec![plain(Key::Num3)],
+            Action::SwitchAngle4 => vec![plain(Key::Num4)],
+            Action::SwitchAngle5 => vec![plain(Key::Num5)],
+            Action::SwitchAngle6 => vec![plain(Key::Num6)],
+            Action::SwitchAngle7 => vec![plain(Key::Num7)],
+            Action::SwitchAngle8 => vec![plain(Key::Num8)],
+            Action::SwitchAngle9 => vec![plain(Key::Num9)],
             Action::ReplaceEdit => vec![Shortcut {
                 shift: true,
                 ..plain(Key::R)
@@ -497,6 +542,22 @@ impl Action {
                 ..plain(Key::Backspace)
             }],
         }
+    }
+
+    /// The angle (0-based) of a `SwitchAngle` action.
+    pub fn angle(self) -> Option<usize> {
+        const ANGLES: [Action; 9] = [
+            Action::SwitchAngle1,
+            Action::SwitchAngle2,
+            Action::SwitchAngle3,
+            Action::SwitchAngle4,
+            Action::SwitchAngle5,
+            Action::SwitchAngle6,
+            Action::SwitchAngle7,
+            Action::SwitchAngle8,
+            Action::SwitchAngle9,
+        ];
+        ANGLES.iter().position(|a| *a == self)
     }
 
     fn from_id(id: &str) -> Option<Action> {

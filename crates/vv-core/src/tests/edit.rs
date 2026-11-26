@@ -927,3 +927,43 @@ fn a_replace_edit_shortens_to_what_the_media_has_left() {
     replace_clip_media(&mut project, &mut history, tl, (0, old), media, 950);
     assert_eq!(project.timelines[tl].clip(0, old).unwrap().timeline_len, 50);
 }
+
+#[test]
+fn switching_angle_cuts_the_stack_and_shows_one() {
+    let (mut project, tl) = project_with_tracks(&[TrackKind::Video, TrackKind::Video]);
+    let mut history = History::default();
+    let media = media(&mut project, 0);
+    for track in 0..2 {
+        let id = project.alloc_clip_id();
+        let clip =
+            Clip::from_source_range(id, ClipSource::Media(media), 0, 100, 0, Rational::one());
+        project.timelines[tl].tracks[track].insert_sorted(clip);
+    }
+    // Angle 0 is the bottom track (index 1).
+    assert!(switch_angle(&mut project, &mut history, tl, 40, 0));
+    let state = |project: &Project, track: usize| -> Vec<(FrameIdx, bool)> {
+        project.timelines[tl].tracks[track]
+            .clips
+            .iter()
+            .map(|c| (c.timeline_start, c.disabled))
+            .collect()
+    };
+    assert_eq!(state(&project, 1), vec![(0, false), (40, false)]);
+    assert_eq!(state(&project, 0), vec![(0, false), (40, true)]);
+    assert!(switch_angle(&mut project, &mut history, tl, 70, 1));
+    assert_eq!(
+        state(&project, 0),
+        vec![(0, false), (40, true), (70, false)]
+    );
+    assert_eq!(
+        state(&project, 1),
+        vec![(0, false), (40, false), (70, true)]
+    );
+    assert!(!switch_angle(&mut project, &mut history, tl, 70, 5));
+    history.undo(&mut project);
+    assert_eq!(
+        state(&project, 0),
+        vec![(0, false), (40, true)],
+        "one undo step"
+    );
+}

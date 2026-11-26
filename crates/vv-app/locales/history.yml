@@ -28,6 +28,10 @@ history.stabilize:
   en: "Stabilize"
   it: "Stabilizza"
 
+history.switch_angle:
+  en: "Switch angle"
+  it: "Cambia angolazione"
+
 history.speed_curve:
   en: "Speed curve"
   it: "Curva di velocità"

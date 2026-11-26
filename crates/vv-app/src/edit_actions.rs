@@ -250,6 +250,19 @@ impl VenturiApp {
         }
     }
 
+    /// Multicam: cuts every angle at the playhead and shows `angle` from there.
+    pub(crate) fn switch_angle(&mut self, angle: usize) {
+        if let Some(timeline_id) = self.timeline_id {
+            vv_core::edit::switch_angle(
+                &mut self.session.project,
+                &mut self.session.history,
+                timeline_id,
+                self.timeline_state.playhead,
+                angle,
+            );
+        }
+    }
+
     pub(crate) fn close_all_gaps(&mut self) {
         if let Some(timeline_id) = self.timeline_id {
             vv_core::edit::close_all_gaps(

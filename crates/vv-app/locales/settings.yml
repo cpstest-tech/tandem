@@ -481,6 +481,33 @@ action.lift_range:
 action.ripple_range:
   en: "Delete In–Out and close the gap"
   it: "Cancella In–Out e chiudi il buco"
+action.switch_angle_1:
+  en: "Switch to angle 1"
+  it: "Passa all'angolazione 1"
+action.switch_angle_2:
+  en: "Switch to angle 2"
+  it: "Passa all'angolazione 2"
+action.switch_angle_3:
+  en: "Switch to angle 3"
+  it: "Passa all'angolazione 3"
+action.switch_angle_4:
+  en: "Switch to angle 4"
+  it: "Passa all'angolazione 4"
+action.switch_angle_5:
+  en: "Switch to angle 5"
+  it: "Passa all'angolazione 5"
+action.switch_angle_6:
+  en: "Switch to angle 6"
+  it: "Passa all'angolazione 6"
+action.switch_angle_7:
+  en: "Switch to angle 7"
+  it: "Passa all'angolazione 7"
+action.switch_angle_8:
+  en: "Switch to angle 8"
+  it: "Passa all'angolazione 8"
+action.switch_angle_9:
+  en: "Switch to angle 9"
+  it: "Passa all'angolazione 9"
 action.ripple_tool:
   en: "Ripple trim tool"
   it: "Strumento ripple"

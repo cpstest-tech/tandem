@@ -89,6 +89,7 @@ pub enum CommandLabel {
     ReverseClips,
     VoiceEffect,
     ReplaceClip,
+    SwitchAngle,
     RemoveSilences,
     AutoCut,
     TextCut,

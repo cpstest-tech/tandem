@@ -1054,3 +1054,67 @@ pub fn replace_clip_media(
     );
     true
 }
+
+/// The angles of a multicam stack at `at`: the unlocked video tracks with a
+/// media clip there, bottom track first.
+pub fn angles_at(project: &Project, timeline_id: TimelineId, at: FrameIdx) -> Vec<ClipRef> {
+    let tl = &project.timelines[timeline_id];
+    let mut angles: Vec<ClipRef> = tl
+        .tracks_of_kind(TrackKind::Video)
+        .filter(|(_, t)| !t.locked)
+        .filter_map(|(i, t)| {
+            t.clips
+                .iter()
+                .find(|c| c.contains(at) && matches!(c.source, ClipSource::Media(_)))
+                .map(|c| (i, c.id))
+        })
+        .collect();
+    angles.sort_by_key(|&(track, _)| std::cmp::Reverse(track));
+    angles
+}
+
+/// Cuts every angle at `at` and, from there on, shows only angle `angle`
+/// (0 = the bottom one). One undo step; `false` if there is no such angle.
+pub fn switch_angle(
+    project: &mut Project,
+    history: &mut History,
+    timeline_id: TimelineId,
+    at: FrameIdx,
+    angle: usize,
+) -> bool {
+    let angles = angles_at(project, timeline_id, at);
+    if angle >= angles.len() || angles.len() < 2 {
+        return false;
+    }
+    let mark = history.begin_group();
+    let crossing: BTreeSet<ClipRef> = angles
+        .iter()
+        .copied()
+        .filter(|&(t, id)| {
+            project.timelines[timeline_id]
+                .clip(t, id)
+                .is_some_and(|c| c.timeline_start < at)
+        })
+        .collect();
+    if !crossing.is_empty() {
+        split_clips(project, history, timeline_id, at, Some(&crossing));
+    }
+    let after = angles_at(project, timeline_id, at);
+    let shown = vec![after[angle]];
+    let hidden: Vec<ClipRef> = after
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| *i != angle)
+        .map(|(_, c)| *c)
+        .collect();
+    history.do_command(
+        project,
+        Box::new(crate::SetClipsDisabled::new(timeline_id, shown, false)),
+    );
+    history.do_command(
+        project,
+        Box::new(crate::SetClipsDisabled::new(timeline_id, hidden, true)),
+    );
+    history.end_group_as(mark, CommandLabel::SwitchAngle);
+    true
+}

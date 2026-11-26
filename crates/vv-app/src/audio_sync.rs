@@ -7,7 +7,7 @@ use std::sync::mpsc;
 
 use vv_core::{ClipId, ClipSource, FrameIdx, TimelineId, TrackKind};
 
-use crate::VenturiApp;
+use crate::{VenturiApp, timeline_ui};
 
 /// Decoding rate: the envelope needs nothing finer.
 const RATE: u32 = 8000;
@@ -23,11 +23,12 @@ struct Side {
 
 pub(crate) struct Job {
     timeline: TimelineId,
+    reference: Vec<(usize, ClipId)>,
     reference_start: FrameIdx,
-    moved: Vec<(usize, ClipId)>,
-    moved_start: FrameIdx,
+    /// Each other group with the start of the clip its audio was read from.
+    moved: Vec<(Vec<(usize, ClipId)>, FrameIdx)>,
     fps: f64,
-    rx: mpsc::Receiver<Result<(i64, f32), String>>,
+    rx: mpsc::Receiver<Vec<Result<(i64, f32), String>>>,
 }
 
 #[derive(Default)]
@@ -70,8 +71,9 @@ fn lag_of(reference: &Side, moved: &Side) -> Result<(i64, f32), String> {
 }
 
 impl VenturiApp {
-    /// Starts lining up the two selected groups: the one with video (or on
-    /// the upper track) stays, the other moves.
+    /// Starts lining up the selected groups by their sound: the one with
+    /// video on the upper track stays, the others move, each onto tracks of
+    /// its own (a multicam stack).
     pub(crate) fn sync_selected_by_audio(&mut self) {
         let Some(timeline_id) = self.timeline_id else {
             return;
@@ -82,15 +84,15 @@ impl VenturiApp {
             let Some(clip) = tl.clip(track, id) else {
                 continue;
             };
-            let members: Vec<(usize, ClipId)> = match clip.linked_group {
+            if groups.iter().any(|g| g.contains(&(track, id))) {
+                continue;
+            }
+            groups.push(match clip.linked_group {
                 Some(group) => tl.clips_in_group(group),
                 None => vec![(track, id)],
-            };
-            if !groups.iter().any(|g| g.contains(&(track, id))) {
-                groups.push(members);
-            }
+            });
         }
-        if groups.len() != 2 {
+        if groups.len() < 2 {
             self.toast = Some((t!("sync.pick_two").into_owned(), std::time::Instant::now()));
             return;
         }
@@ -98,13 +100,10 @@ impl VenturiApp {
             g.iter()
                 .any(|&(t, _)| tl.tracks[t].kind == TrackKind::Video)
         };
-        if !has_video(&groups[0]) && has_video(&groups[1])
-            || (has_video(&groups[0]) == has_video(&groups[1]) && groups[1][0].0 < groups[0][0].0)
-        {
-            groups.swap(0, 1);
-        }
+        // Video first, then the upper tracks.
+        groups.sort_by_key(|g| (!has_video(g), g.iter().map(|c| c.0).min()));
+        let fps = tl.fps.as_f64();
         let side = |g: &Vec<(usize, ClipId)>| -> Option<(Side, FrameIdx)> {
-            let fps = tl.fps.as_f64();
             // The audio clip of the group if any, else the video one's file.
             let &(track, id) = g
                 .iter()
@@ -128,26 +127,29 @@ impl VenturiApp {
                 clip.timeline_start,
             ))
         };
-        let (Some((reference, reference_start)), Some((moved, moved_start))) =
-            (side(&groups[0]), side(&groups[1]))
-        else {
+        let sides: Option<Vec<(Side, FrameIdx)>> = groups.iter().map(side).collect();
+        let Some(mut sides) = sides else {
             self.toast = Some((t!("sync.no_audio").into_owned(), std::time::Instant::now()));
             return;
         };
+        let (reference, reference_start) = sides.remove(0);
+        let moved_starts: Vec<FrameIdx> = sides.iter().map(|s| s.1).collect();
         let (tx, rx) = mpsc::channel();
         std::thread::Builder::new()
             .name("audio-sync".into())
             .spawn(move || {
-                let _ = tx.send(lag_of(&reference, &moved));
+                let lags = sides.iter().map(|(s, _)| lag_of(&reference, s)).collect();
+                let _ = tx.send(lags);
             })
             .expect("spawning the audio sync thread");
         self.toast = Some((t!("sync.working").into_owned(), std::time::Instant::now()));
+        let reference_group = groups.remove(0);
         self.audio_sync.job = Some(Job {
             timeline: timeline_id,
+            reference: reference_group,
             reference_start,
-            moved: groups[1].clone(),
-            moved_start,
-            fps: tl.fps.as_f64(),
+            moved: groups.into_iter().zip(moved_starts).collect(),
+            fps,
             rx,
         });
     }
@@ -156,51 +158,74 @@ impl VenturiApp {
         let Some(job) = &self.audio_sync.job else {
             return;
         };
-        let result = match job.rx.try_recv() {
-            Ok(result) => result,
+        let results = match job.rx.try_recv() {
+            Ok(results) => results,
             Err(mpsc::TryRecvError::Empty) => {
                 ctx.request_repaint_after(std::time::Duration::from_millis(100));
                 return;
             }
-            Err(mpsc::TryRecvError::Disconnected) => Err("worker stopped".into()),
+            Err(mpsc::TryRecvError::Disconnected) => Vec::new(),
         };
         let Some(job) = self.audio_sync.job.take() else {
             return;
         };
-        match result {
-            Ok((_, confidence)) if confidence < MIN_CONFIDENCE => {
-                self.toast = Some((t!("sync.no_match").into_owned(), std::time::Instant::now()));
-            }
-            Ok((lag, _)) => {
-                let lag_secs = lag as f64 / vv_audio::sync::ENVELOPE_RATE as f64;
-                let target = job.reference_start + (lag_secs * job.fps).round() as FrameIdx;
-                let delta = target - job.moved_start;
-                let Some(tl) = self.session.project.timelines.get(job.timeline) else {
-                    return;
+        if self.session.project.timelines.get(job.timeline).is_none() {
+            return;
+        }
+        let group = self.session.history.begin_group();
+        let mut taken: Vec<usize> = job.reference.iter().map(|c| c.0).collect();
+        let (mut synced, mut failed) = (0, 0);
+        for ((members, moved_start), result) in job.moved.iter().zip(results) {
+            let lag = match result {
+                Ok((lag, confidence)) if confidence >= MIN_CONFIDENCE => lag,
+                _ => {
+                    failed += 1;
+                    continue;
+                }
+            };
+            let lag_secs = lag as f64 / vv_audio::sync::ENVELOPE_RATE as f64;
+            let target = job.reference_start + (lag_secs * job.fps).round() as FrameIdx;
+            let delta = target - moved_start;
+            let mut moves = Vec::new();
+            for &(track, id) in members {
+                let tl = &self.session.project.timelines[job.timeline];
+                let Some(start) = tl.clip(track, id).map(|c| c.timeline_start) else {
+                    continue;
                 };
-                let moves: Vec<_> = job
-                    .moved
-                    .iter()
-                    .filter_map(|&(t, id)| {
-                        let c = tl.clip(t, id)?;
-                        Some((id, t, t, (c.timeline_start + delta).max(0)))
-                    })
-                    .collect();
-                if delta != 0 && !moves.is_empty() {
-                    vv_core::edit::move_clips(
+                // Another angle already sits there: this one gets its own track.
+                let to = if taken.contains(&track) {
+                    let kind = tl.tracks[track].kind;
+                    timeline_ui::add_track(
                         &mut self.session.project,
                         &mut self.session.history,
                         job.timeline,
-                        moves,
-                    );
-                }
-                self.toast = Some((
-                    t!("sync.done", frames = delta).into_owned(),
-                    std::time::Instant::now(),
-                ));
+                        kind,
+                    )
+                } else {
+                    track
+                };
+                taken.push(to);
+                moves.push((id, track, to, (start + delta).max(0)));
             }
-            Err(e) => self.toast = Some((e, std::time::Instant::now())),
+            if !moves.is_empty() {
+                vv_core::edit::move_clips(
+                    &mut self.session.project,
+                    &mut self.session.history,
+                    job.timeline,
+                    moves,
+                );
+            }
+            synced += 1;
         }
+        self.session
+            .history
+            .end_group_as(group, vv_core::CommandLabel::MoveClips);
+        let message = if failed > 0 && synced == 0 {
+            t!("sync.no_match").into_owned()
+        } else {
+            t!("sync.done_count", count = synced, failed = failed).into_owned()
+        };
+        self.toast = Some((message, std::time::Instant::now()));
     }
 }
 
