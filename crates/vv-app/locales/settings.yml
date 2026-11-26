@@ -511,6 +511,9 @@ action.switch_angle_9:
 action.toggle_loop:
   en: "Loop playback"
   it: "Riproduzione in loop"
+action.command_palette:
+  en: "Command palette"
+  it: "Palette comandi"
 action.ripple_tool:
   en: "Ripple trim tool"
   it: "Strumento ripple"

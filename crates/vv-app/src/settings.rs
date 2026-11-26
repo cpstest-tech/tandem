@@ -102,10 +102,11 @@ pub enum Action {
     SwitchAngle8,
     SwitchAngle9,
     ToggleLoop,
+    CommandPalette,
 }
 
 impl Action {
-    pub const ALL: [Action; 88] = [
+    pub const ALL: [Action; 89] = [
         Action::TogglePlayback,
         Action::FastPlayback,
         Action::StepBackward,
@@ -194,6 +195,7 @@ impl Action {
         Action::SwitchAngle8,
         Action::SwitchAngle9,
         Action::ToggleLoop,
+        Action::CommandPalette,
     ];
 
     /// Key in the settings file: must never be changed.
@@ -287,6 +289,7 @@ impl Action {
             Action::SwitchAngle8 => "switch_angle_8",
             Action::SwitchAngle9 => "switch_angle_9",
             Action::ToggleLoop => "toggle_loop",
+            Action::CommandPalette => "command_palette",
         }
     }
 
@@ -357,7 +360,8 @@ impl Action {
             | Action::SaveProjectAs
             | Action::ImportMedia
             | Action::Export
-            | Action::OpenSettings => t!("action_category.file"),
+            | Action::OpenSettings
+            | Action::CommandPalette => t!("action_category.file"),
             Action::ZoomIn
             | Action::ZoomOut
             | Action::AddMarker
@@ -538,6 +542,7 @@ impl Action {
             Action::SwitchAngle8 => vec![plain(Key::Num8)],
             Action::SwitchAngle9 => vec![plain(Key::Num9)],
             Action::ToggleLoop => vec![ctrl(Key::L)],
+            Action::CommandPalette => vec![ctrl(Key::K)],
             Action::ReplaceEdit => vec![Shortcut {
                 shift: true,
                 ..plain(Key::R)

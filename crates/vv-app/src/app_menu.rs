@@ -51,14 +51,25 @@ impl VenturiApp {
         let mut make_compound = false;
         let mut ungroup_compound = false;
         let mut exit_compound = false;
+        let palette_open = self.palette.open;
+        let injected = match self.palette.pending.take() {
+            Some(command_palette::Entry::Action(action)) => Some(action),
+            Some(other) => {
+                self.run_palette_entry(&ctx, other);
+                None
+            }
+            None => None,
+        };
         ui.input(|i| {
             arrow_input.1 = i.time;
             // Mouse "back" button, as in a web browser.
             exit_compound = i.pointer.button_pressed(egui::PointerButton::Extra1);
-            if typing || blocks_shortcuts || menu_open {
+            let blocked = typing || blocks_shortcuts || menu_open || palette_open;
+            if blocked && injected.is_none() {
                 return;
             }
-            let pressed = |action| keymap.pressed(action, i);
+            let pressed =
+                |action| injected == Some(action) || (!blocked && keymap.pressed(action, i));
             arrow_input.0 = match (
                 keymap.down(Action::StepBackward, i),
                 keymap.down(Action::StepForward, i),
@@ -169,6 +180,9 @@ impl VenturiApp {
             }
             if pressed(Action::CloseGaps) {
                 self.close_all_gaps();
+            }
+            if pressed(Action::CommandPalette) {
+                self.palette.open = true;
             }
             if pressed(Action::ToggleLoop) {
                 self.timeline_state.loop_playback = !self.timeline_state.loop_playback;

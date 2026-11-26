@@ -26,6 +26,7 @@ mod broll;
 mod canvas_ui;
 mod color_match;
 mod color_window;
+mod command_palette;
 mod compressor_panel;
 mod cover;
 mod downloader;
@@ -646,6 +647,7 @@ struct VenturiApp {
     stabilize: stabilize_ui::State,
     audio_sync: audio_sync::State,
     tracking: tracking_ui::State,
+    palette: command_palette::State,
     vertical: vertical_layout::State,
     transcript: transcript::State,
     style_packs: style_packs::State,
@@ -811,6 +813,7 @@ impl Default for VenturiApp {
             stabilize: Default::default(),
             audio_sync: Default::default(),
             tracking: Default::default(),
+            palette: Default::default(),
             vertical: vertical_layout::State::default(),
             transcript: transcript::State::default(),
             style_packs: style_packs::State::default(),
@@ -4562,6 +4565,7 @@ impl VenturiApp {
         self.show_recovery_notice(ui.ctx());
         self.poll_downloads(ui.ctx());
         self.show_download_dialog(ui.ctx());
+        self.show_command_palette(ui.ctx());
         self.show_toast(ui.ctx());
         self.show_beat_window(ui.ctx());
         self.show_settings_dialog(ui.ctx());

@@ -1,0 +1,8 @@
+_version: 2
+
+palette.hint:
+  en: "Type a command…"
+  it: "Scrivi un comando…"
+palette.none:
+  en: "No command matches."
+  it: "Nessun comando corrisponde."
