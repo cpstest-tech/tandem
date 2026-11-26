@@ -1,0 +1,14 @@
+_version: 2
+
+broll.button:
+  en: "Auto B-roll"
+  it: "B-roll automatico"
+broll.hint:
+  en: "Lays the pool media whose file name is a word said here over the speech, on a new track."
+  it: "Mette sopra il parlato, su una nuova traccia, i media del pool il cui nome file è una parola detta qui."
+broll.none:
+  en: "No media of the pool is named after a word of the transcript."
+  it: "Nessun media del pool ha il nome di una parola del transcript."
+broll.done:
+  en: "%{count} B-roll shots added on a new track."
+  it: "%{count} inquadrature di B-roll aggiunte su una nuova traccia."

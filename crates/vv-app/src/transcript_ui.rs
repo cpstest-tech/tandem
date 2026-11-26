@@ -140,6 +140,7 @@ struct Actions {
     auto_cut: Option<Option<usize>>,
     correct: Option<(usize, String)>,
     edit: Option<usize>,
+    broll: bool,
 }
 
 impl VenturiApp {
@@ -229,6 +230,13 @@ impl VenturiApp {
                 .clicked()
             {
                 actions.cut = true;
+            }
+            if ui
+                .button(t!("broll.button"))
+                .on_hover_text(t!("broll.hint"))
+                .clicked()
+            {
+                actions.broll = true;
             }
             ui.menu_button(t!("transcript.select"), |ui| {
                 let model = self.transcript.model.as_ref().unwrap();
@@ -740,6 +748,15 @@ impl VenturiApp {
     }
 
     fn run_transcript_actions(&mut self, ctx: &egui::Context, actions: Actions) {
+        if actions.broll {
+            let count = self.insert_auto_broll();
+            let message = if count == 0 {
+                t!("broll.none").into_owned()
+            } else {
+                t!("broll.done", count = count).into_owned()
+            };
+            self.toast = Some((message, std::time::Instant::now()));
+        }
         if let Some(w) = actions.edit
             && let Some(word) = self.transcript.model.as_ref().and_then(|m| m.words.get(w))
         {

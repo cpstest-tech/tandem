@@ -22,6 +22,7 @@ mod auto_cut_ui;
 mod auto_zoom;
 mod autosave;
 mod beat_sync;
+mod broll;
 mod canvas_ui;
 mod color_match;
 mod color_window;
