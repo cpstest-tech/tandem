@@ -98,6 +98,7 @@ mod timeline_audio;
 mod timeline_bar;
 mod timeline_commands;
 mod timeline_ui;
+mod tracking_ui;
 mod transcript;
 mod transcript_ui;
 mod transport;
@@ -642,6 +643,7 @@ struct VenturiApp {
     adjust: adjust_tab::AdjustState,
     stabilize: stabilize_ui::State,
     audio_sync: audio_sync::State,
+    tracking: tracking_ui::State,
     vertical: vertical_layout::State,
     transcript: transcript::State,
     style_packs: style_packs::State,
@@ -806,6 +808,7 @@ impl Default for VenturiApp {
             adjust: Default::default(),
             stabilize: Default::default(),
             audio_sync: Default::default(),
+            tracking: Default::default(),
             vertical: vertical_layout::State::default(),
             transcript: transcript::State::default(),
             style_packs: style_packs::State::default(),
@@ -4445,6 +4448,7 @@ impl VenturiApp {
             self.poll_session(&ui.ctx().clone());
             self.poll_stabilize_job(&ui.ctx().clone());
             self.poll_audio_sync(&ui.ctx().clone());
+            self.poll_tracking(&ui.ctx().clone());
         }
         let screenshots: Vec<std::sync::Arc<egui::ColorImage>> = ui.ctx().input(|i| {
             i.raw

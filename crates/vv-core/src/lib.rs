@@ -27,6 +27,7 @@ pub mod text_anim;
 pub mod text_anim_presets;
 pub mod text_style;
 pub mod text_template;
+pub mod tracking;
 pub mod transcript_edit;
 pub mod workflow;
 

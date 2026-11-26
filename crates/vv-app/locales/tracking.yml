@@ -1,0 +1,11 @@
+_version: 2
+
+tracking.title:
+  en: "Follow an object"
+  it: "Segui un oggetto"
+tracking.hint:
+  en: "Put the clip over something in the video below at the playhead: it will follow it until it ends."
+  it: "Metti il clip sopra qualcosa del video sotto, alla testina: lo seguirà fino alla fine."
+tracking.start:
+  en: "Track"
+  it: "Traccia"

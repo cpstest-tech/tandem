@@ -2319,6 +2319,7 @@ impl VenturiApp {
                                                 }
                                             }
                                             self.show_stabilize_section(ui, targets);
+                                            self.show_tracking_section(ui, targets);
                                             self.show_canvas_section(ui, targets, &mut pending_effects);
                                             }
 

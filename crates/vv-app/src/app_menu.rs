@@ -1189,6 +1189,7 @@ fn command_label(label: vv_core::CommandLabel) -> std::borrow::Cow<'static, str>
         L::VoiceEffect => t!("props.voice_changer"),
         L::ReplaceClip => t!("action.replace_edit"),
         L::SwitchAngle => t!("history.switch_angle"),
+        L::TrackMotion => t!("tracking.title"),
         L::RemoveSilences => t!("history.remove_silences"),
         L::AutoCut => t!("auto_cut.title"),
         L::TextCut => t!("transcript.history_cut"),

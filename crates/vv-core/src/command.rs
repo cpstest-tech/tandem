@@ -90,6 +90,7 @@ pub enum CommandLabel {
     VoiceEffect,
     ReplaceClip,
     SwitchAngle,
+    TrackMotion,
     RemoveSilences,
     AutoCut,
     TextCut,
