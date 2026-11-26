@@ -217,6 +217,39 @@ impl VenturiApp {
             .end_group_as(group, vv_core::CommandLabel::ReplaceClip);
     }
 
+    /// Deletes the In–Out stretch on every unlocked track; `ripple` closes it.
+    pub(crate) fn delete_marked_range(&mut self, ripple: bool) {
+        let Some(timeline_id) = self.timeline_id else {
+            return;
+        };
+        let marks = self.timeline_state.export_marks;
+        if marks.mark_in.is_none() && marks.mark_out.is_none() {
+            return;
+        }
+        let total = self.session.project.timelines[timeline_id].total_frames();
+        let (start, end) = marks.resolve(total);
+        if end <= start {
+            return;
+        }
+        let mode = if ripple {
+            vv_core::edit::RangeDelete::Ripple
+        } else {
+            vv_core::edit::RangeDelete::Lift { tracks: None }
+        };
+        vv_core::edit::delete_ranges(
+            &mut self.session.project,
+            &mut self.session.history,
+            timeline_id,
+            &[(start, end)],
+            &mode,
+        );
+        self.timeline_state.selected.clear();
+        if ripple {
+            self.timeline_state.export_marks.clear_all();
+            self.timeline_state.playhead = start;
+        }
+    }
+
     pub(crate) fn close_all_gaps(&mut self) {
         if let Some(timeline_id) = self.timeline_id {
             vv_core::edit::close_all_gaps(

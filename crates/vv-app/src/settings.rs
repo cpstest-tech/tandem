@@ -89,10 +89,13 @@ pub enum Action {
     CloseGaps,
     RippleTool,
     ReplaceEdit,
+    RangeTool,
+    LiftRange,
+    RippleRange,
 }
 
 impl Action {
-    pub const ALL: [Action; 75] = [
+    pub const ALL: [Action; 78] = [
         Action::TogglePlayback,
         Action::FastPlayback,
         Action::StepBackward,
@@ -168,6 +171,9 @@ impl Action {
         Action::CloseGaps,
         Action::RippleTool,
         Action::ReplaceEdit,
+        Action::RangeTool,
+        Action::LiftRange,
+        Action::RippleRange,
     ];
 
     /// Key in the settings file: must never be changed.
@@ -248,6 +254,9 @@ impl Action {
             Action::CloseGaps => "close_gaps",
             Action::RippleTool => "ripple_tool",
             Action::ReplaceEdit => "replace_edit",
+            Action::RangeTool => "range_tool",
+            Action::LiftRange => "lift_range",
+            Action::RippleRange => "ripple_range",
         }
     }
 
@@ -296,6 +305,8 @@ impl Action {
             | Action::SelectFromPlayhead
             | Action::Rename
             | Action::ReplaceEdit
+            | Action::LiftRange
+            | Action::RippleRange
             | Action::DeleteLeft
             | Action::DeleteRight
             | Action::Duplicate
@@ -332,6 +343,7 @@ impl Action {
             | Action::ToggleLinkage
             | Action::MatchFrame
             | Action::RippleTool
+            | Action::RangeTool
             | Action::FitTimeline
             | Action::MakeCompound
             | Action::UngroupCompound => {
@@ -470,6 +482,12 @@ impl Action {
             Action::NudgeRight10 => vec![ctrl_shift(Key::ArrowRight)],
             Action::MatchFrame => vec![plain(Key::F)],
             Action::RippleTool => vec![plain(Key::R)],
+            Action::RangeTool => vec![plain(Key::G)],
+            Action::LiftRange => vec![Shortcut {
+                shift: true,
+                ..plain(Key::Delete)
+            }],
+            Action::RippleRange => vec![ctrl(Key::Delete)],
             Action::ReplaceEdit => vec![Shortcut {
                 shift: true,
                 ..plain(Key::R)

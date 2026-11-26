@@ -12,13 +12,14 @@ const ZOOM_SLIDER_WIDTH: f32 = 96.0;
 const ZOOM_STEP: f32 = 0.1;
 const TOOL_ROW_SIZE: egui::Vec2 = egui::vec2(200.0, 28.0);
 
-const TOOLS: [(TimelineTool, Action); 6] = [
+const TOOLS: [(TimelineTool, Action); 7] = [
     (TimelineTool::Select, Action::SelectTool),
     (TimelineTool::Blade, Action::BladeTool),
     (TimelineTool::SelectLeft, Action::SelectLeftTool),
     (TimelineTool::SelectRight, Action::SelectRightTool),
     (TimelineTool::Slip, Action::SlipTool),
     (TimelineTool::Ripple, Action::RippleTool),
+    (TimelineTool::Range, Action::RangeTool),
 ];
 
 fn tool_label(tool: TimelineTool) -> std::borrow::Cow<'static, str> {
@@ -29,6 +30,7 @@ fn tool_label(tool: TimelineTool) -> std::borrow::Cow<'static, str> {
         TimelineTool::SelectRight => t!("timeline_bar.mode_select_right"),
         TimelineTool::Slip => t!("timeline_bar.mode_slip"),
         TimelineTool::Ripple => t!("timeline_bar.mode_ripple"),
+        TimelineTool::Range => t!("timeline_bar.mode_range"),
     }
 }
 
@@ -772,6 +774,17 @@ pub(crate) fn paint_tool_icon(
             let tip = c + egui::vec2(-towards * 8.0, 0.0);
             p.line_segment([tip, c + egui::vec2(towards * 2.0, 0.0)], s);
             p.add(arrow_head(tip, egui::vec2(-towards, 0.0), 4.0, color));
+        }
+        TimelineTool::Range => {
+            // Two marks with the span between them.
+            for x in [c.x - 7.0, c.x + 7.0] {
+                p.line_segment([egui::pos2(x, c.y - 7.0), egui::pos2(x, c.y + 7.0)], s);
+            }
+            p.rect_filled(
+                egui::Rect::from_center_size(c, egui::vec2(10.0, 6.0)),
+                1.0,
+                color.gamma_multiply(0.6),
+            );
         }
         TimelineTool::Ripple => {
             // A bracket with the clips after it pushed along.

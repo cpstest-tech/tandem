@@ -106,6 +106,7 @@ impl VenturiApp {
                 ),
                 (Action::SlipTool, timeline_ui::TimelineTool::Slip),
                 (Action::RippleTool, timeline_ui::TimelineTool::Ripple),
+                (Action::RangeTool, timeline_ui::TimelineTool::Range),
             ] {
                 if pressed(action) {
                     self.set_timeline_tool(tool);
@@ -149,6 +150,12 @@ impl VenturiApp {
             }
             if pressed(Action::MatchFrame) {
                 self.match_frame();
+            }
+            if pressed(Action::LiftRange) {
+                self.delete_marked_range(false);
+            }
+            if pressed(Action::RippleRange) {
+                self.delete_marked_range(true);
             }
             if pressed(Action::ReplaceEdit) {
                 self.replace_selected_clips();

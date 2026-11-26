@@ -472,6 +472,15 @@ action.close_gaps:
 action.replace_edit:
   en: "Replace the selected clip"
   it: "Sostituisci il clip selezionato"
+action.range_tool:
+  en: "Range tool"
+  it: "Strumento intervallo"
+action.lift_range:
+  en: "Delete In–Out, leave the gap"
+  it: "Cancella In–Out lasciando il buco"
+action.ripple_range:
+  en: "Delete In–Out and close the gap"
+  it: "Cancella In–Out e chiudi il buco"
 action.ripple_tool:
   en: "Ripple trim tool"
   it: "Strumento ripple"

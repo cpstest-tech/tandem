@@ -83,6 +83,8 @@ pub enum TimelineTool {
     /// Trimming an edge moves everything after it on every unlocked track,
     /// so no gap opens and nothing is overwritten.
     Ripple,
+    /// A drag marks a stretch of time across all tracks (the In/Out marks).
+    Range,
 }
 
 /// Something the timeline asks the app to do (bar, context menu): the app
@@ -190,6 +192,8 @@ pub struct TimelineState {
     audio_scroll_vel: f32,
     /// In/out of the timeline: the exported portion.
     pub export_marks: crate::transport::MarkRange,
+    /// Where the Range tool's drag began.
+    range_anchor: Option<FrameIdx>,
     /// "Paste attributes" asked from the context menu: the dialog lives in
     /// the app, which opens it and clears the flag.
     pub paste_attributes_requested: bool,
@@ -531,6 +535,7 @@ impl Default for TimelineState {
             video_scroll_vel: 0.0,
             audio_scroll_vel: 0.0,
             export_marks: crate::transport::MarkRange::default(),
+            range_anchor: None,
             paste_attributes_requested: false,
             save_preset_requested: None,
             preset_drop: None,
@@ -3889,6 +3894,24 @@ pub fn show_timeline(
                                 state.selection_anchor = Some(key);
                                 state.selected_gap = None;
                                 state.selected_transition = None;
+                            }
+                        }
+                    } else if state.tool == TimelineTool::Range {
+                        if let Some(pos) = resp.interact_pointer_pos() {
+                            let frame =
+                                (((pos.x - origin.x) / px_per_frame).round() as FrameIdx).max(0);
+                            if resp.drag_started() {
+                                state.range_anchor = Some(frame);
+                            }
+                            if let Some(anchor) = state.range_anchor
+                                && resp.dragged()
+                            {
+                                let (start, end) = (anchor.min(frame), anchor.max(frame));
+                                state.export_marks.mark_in = Some(start);
+                                state.export_marks.mark_out = Some(end.max(start + 1));
+                            }
+                            if resp.drag_stopped() {
+                                state.range_anchor = None;
                             }
                         }
                     } else if resp.drag_started() && slip_tool {

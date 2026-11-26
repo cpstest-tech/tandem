@@ -79,3 +79,23 @@ fn append_puts_the_pool_selection_after_the_last_clip() {
         "the playhead follows the edit"
     );
 }
+
+#[test]
+fn the_marked_range_is_lifted_or_rippled_on_every_track() {
+    let (mut app, _) = app_with_clip(0, 100);
+    app.timeline_state.export_marks.mark_in = Some(20);
+    app.timeline_state.export_marks.mark_out = Some(30);
+    app.delete_marked_range(false);
+    let spans = |app: &VenturiApp| -> Vec<(FrameIdx, FrameIdx)> {
+        app.session.project.timelines[app.timeline_id.unwrap()].tracks[0]
+            .clips
+            .iter()
+            .map(|c| (c.timeline_start, c.timeline_len))
+            .collect()
+    };
+    assert_eq!(spans(&app), vec![(0, 20), (30, 70)]);
+    app.undo();
+    app.delete_marked_range(true);
+    assert_eq!(spans(&app), vec![(0, 20), (20, 70)]);
+    assert_eq!(app.timeline_state.playhead, 20);
+}

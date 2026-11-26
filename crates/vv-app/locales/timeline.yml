@@ -404,6 +404,10 @@ timeline_bar.mode_slip:
   en: "Slip"
   it: "Slip"
 
+timeline_bar.mode_range:
+  en: "Range"
+  it: "Intervallo"
+
 timeline_bar.mode_ripple:
   en: "Ripple trim"
   it: "Ripple trim"
