@@ -1060,3 +1060,77 @@ impl GradeTracks {
 #[cfg(test)]
 #[path = "tests/grade.rs"]
 mod tests;
+
+/// Mean and spread of the picture's luma and chroma: what a match compares.
+fn color_stats(pixels: &[[f32; 3]]) -> [f32; 5] {
+    let n = pixels.len().max(1) as f32;
+    let mut sum = [0.0f32; 5];
+    for p in pixels {
+        let y = luma(*p);
+        let (cb, cr) = ((p[2] - y) / CB_SCALE, (p[0] - y) / CR_SCALE);
+        sum[0] += y;
+        sum[1] += y * y;
+        sum[2] += cb;
+        sum[3] += cr;
+        sum[4] += cb.hypot(cr);
+    }
+    let mean = sum[0] / n;
+    [
+        mean,
+        (sum[1] / n - mean * mean).max(0.0).sqrt(),
+        sum[2] / n,
+        sum[3] / n,
+        sum[4] / n,
+    ]
+}
+
+/// `grade` changed so that `target` (RGB 0–1 of the clip without `grade`'s
+/// matched params) looks like `reference`: brightness, contrast, saturation
+/// and the offset wheel's colour, found by descent on the CPU reference.
+pub fn match_color(grade: &GradeValue, target: &[[f32; 3]], reference: &[[f32; 3]]) -> GradeValue {
+    const PARAMS: [GradeParam; 5] = [
+        GradeParam::Brightness,
+        GradeParam::Contrast,
+        GradeParam::Saturation,
+        GradeParam::OffsetX,
+        GradeParam::OffsetY,
+    ];
+    let want = color_stats(reference);
+    let weights = [4.0, 3.0, 6.0, 6.0, 3.0];
+    let cost = |g: &GradeValue| {
+        let graded: Vec<[f32; 3]> = target.iter().map(|p| apply_grade(*p, g)).collect();
+        let got = color_stats(&graded);
+        (0..5)
+            .map(|i| weights[i] * (got[i] - want[i]).powi(2))
+            .sum::<f32>()
+    };
+    let mut best = *grade;
+    for p in PARAMS {
+        best.set(p, p.neutral());
+    }
+    let mut best_cost = cost(&best);
+    let mut step = 0.2f32;
+    while step > 0.002 {
+        let mut improved = false;
+        for p in PARAMS {
+            for dir in [-1.0, 1.0] {
+                let mut trial = best;
+                let range = p.range();
+                trial.set(
+                    p,
+                    (best.get(p) + dir * step).clamp(*range.start(), *range.end()),
+                );
+                let c = cost(&trial);
+                if c < best_cost {
+                    best = trial;
+                    best_cost = c;
+                    improved = true;
+                }
+            }
+        }
+        if !improved {
+            step *= 0.5;
+        }
+    }
+    best
+}

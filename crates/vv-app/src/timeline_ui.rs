@@ -111,6 +111,7 @@ pub enum TimelineCommand {
     FreezeFrame,
     Reverse,
     SyncByAudio,
+    MatchColor,
     Mirror,
     ExtractAudio,
     Group,
@@ -4188,6 +4189,13 @@ pub fn show_timeline(
                             &t!("timeline.freeze_frame_action"),
                             TimelineCommand::FreezeFrame,
                             is_media_video,
+                        );
+                        menu_command(
+                            ui,
+                            state,
+                            &t!("color_match.menu"),
+                            TimelineCommand::MatchColor,
+                            state.selected.len() >= 2,
                         );
                         menu_command(
                             ui,

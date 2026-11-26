@@ -23,6 +23,7 @@ mod auto_zoom;
 mod autosave;
 mod beat_sync;
 mod canvas_ui;
+mod color_match;
 mod color_window;
 mod compressor_panel;
 mod cover;

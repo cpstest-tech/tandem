@@ -325,3 +325,31 @@ fn auto_enhance_brightens_a_dull_dark_picture() {
     let after = luma(apply_grade(pixels[500], &enhanced));
     assert!(after > before);
 }
+
+#[test]
+fn a_dark_cool_shot_is_matched_to_a_warm_bright_one() {
+    let shot = |gain: f32, tint: [f32; 3]| -> Vec<[f32; 3]> {
+        (0..400)
+            .map(|i| {
+                let v = 0.1 + 0.8 * (i as f32 / 400.0);
+                [v * gain * tint[0], v * gain * tint[1], v * gain * tint[2]]
+                    .map(|c| c.clamp(0.0, 1.0))
+            })
+            .collect()
+    };
+    let reference = shot(1.0, [1.0, 0.92, 0.8]);
+    let target = shot(0.6, [0.85, 0.95, 1.0]);
+    let matched = match_color(&GradeValue::NEUTRAL, &target, &reference);
+    let graded: Vec<[f32; 3]> = target.iter().map(|p| apply_grade(*p, &matched)).collect();
+    let (want, got, before) = (
+        color_stats(&reference),
+        color_stats(&graded),
+        color_stats(&target),
+    );
+    for i in 0..4 {
+        assert!(
+            (got[i] - want[i]).abs() < (before[i] - want[i]).abs() * 0.5 + 0.01,
+            "stat {i}: {got:?} vs {want:?}"
+        );
+    }
+}

@@ -145,7 +145,7 @@ fn curve_graph(
 
 /// The color correction of every target set to `edit`, adding one where
 /// missing: what any change on this tab commits.
-fn commands_for(
+pub(crate) fn commands_for(
     tl: Option<&vv_core::Timeline>,
     targets: &[PanelTarget],
     section: &GradeSectionResponse,

@@ -71,6 +71,7 @@ impl VenturiApp {
             TimelineCommand::FreezeFrame => self.freeze_frame_at_playhead(),
             TimelineCommand::Reverse => self.reverse_selected(),
             TimelineCommand::SyncByAudio => self.sync_selected_by_audio(),
+            TimelineCommand::MatchColor => self.match_color_of_selection(),
             TimelineCommand::Mirror => self.mirror_selected(),
             TimelineCommand::ExtractAudio => self.extract_selected_audio(),
             TimelineCommand::Group => self.group_selected(),
