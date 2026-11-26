@@ -1,0 +1,20 @@
+_version: 2
+
+sync.menu:
+  en: "Sync by audio"
+  it: "Sincronizza con l'audio"
+sync.pick_two:
+  en: "Select two clips (or linked groups) that recorded the same sound."
+  it: "Seleziona due clip (o gruppi collegati) che hanno registrato lo stesso suono."
+sync.no_audio:
+  en: "Both clips need audio to sync."
+  it: "Entrambi i clip devono avere l'audio per sincronizzarli."
+sync.working:
+  en: "Matching the audio…"
+  it: "Confronto l'audio…"
+sync.no_match:
+  en: "The two recordings do not seem to match."
+  it: "Le due registrazioni non sembrano corrispondere."
+sync.done:
+  en: "Synced: moved by %{frames} frames."
+  it: "Sincronizzati: spostato di %{frames} frame."

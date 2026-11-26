@@ -17,6 +17,7 @@ pub mod recorder;
 pub mod spectrum;
 pub mod stretch;
 pub mod stretched;
+pub mod sync;
 
 pub use blocks::{BLOCK_FRAMES, SampleBlocks};
 pub use effect::{PluginHandle, PluginProcessor, PluginRequest};

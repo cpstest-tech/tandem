@@ -16,6 +16,7 @@ mod ai_sequence_cards;
 mod ai_sequence_ui;
 mod app_menu;
 mod audio_cleanup;
+mod audio_sync;
 mod auto_cut;
 mod auto_cut_ui;
 mod auto_zoom;
@@ -640,6 +641,7 @@ struct VenturiApp {
     beat: beat_sync::State,
     adjust: adjust_tab::AdjustState,
     stabilize: stabilize_ui::State,
+    audio_sync: audio_sync::State,
     vertical: vertical_layout::State,
     transcript: transcript::State,
     style_packs: style_packs::State,
@@ -803,6 +805,7 @@ impl Default for VenturiApp {
             beat: beat_sync::State::default(),
             adjust: Default::default(),
             stabilize: Default::default(),
+            audio_sync: Default::default(),
             vertical: vertical_layout::State::default(),
             transcript: transcript::State::default(),
             style_packs: style_packs::State::default(),
@@ -4441,6 +4444,7 @@ impl VenturiApp {
         if self.edit_drag_group.is_none() && !self.timeline_state.holds_undo_group() {
             self.poll_session(&ui.ctx().clone());
             self.poll_stabilize_job(&ui.ctx().clone());
+            self.poll_audio_sync(&ui.ctx().clone());
         }
         let screenshots: Vec<std::sync::Arc<egui::ColorImage>> = ui.ctx().input(|i| {
             i.raw

@@ -110,6 +110,7 @@ pub enum TimelineCommand {
     ToggleDisabled,
     FreezeFrame,
     Reverse,
+    SyncByAudio,
     Mirror,
     ExtractAudio,
     Group,
@@ -4187,6 +4188,13 @@ pub fn show_timeline(
                             &t!("timeline.freeze_frame_action"),
                             TimelineCommand::FreezeFrame,
                             is_media_video,
+                        );
+                        menu_command(
+                            ui,
+                            state,
+                            &t!("sync.menu"),
+                            TimelineCommand::SyncByAudio,
+                            state.selected.len() >= 2,
                         );
                         menu_command(
                             ui,
