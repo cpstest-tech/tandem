@@ -55,7 +55,7 @@ pub(crate) fn show_bar(
             // Right to left: the first added is the rightmost.
             zoom_controls(ui, state, keymap);
             divider(ui);
-            let toggles: [(&mut bool, &PaintIcon, _, _); 4] = [
+            let toggles: [(&mut bool, &PaintIcon, _, _); 5] = [
                 (
                     &mut state.preview_axis,
                     &paint_preview_axis,
@@ -79,6 +79,12 @@ pub(crate) fn show_bar(
                     &paint_magnet,
                     t!("timeline_bar.magnet_hint"),
                     Action::ToggleMagnet,
+                ),
+                (
+                    &mut state.loop_playback,
+                    &paint_loop,
+                    t!("timeline_bar.loop_hint"),
+                    Action::ToggleLoop,
                 ),
             ];
             for (value, paint, label, action) in toggles {
@@ -628,6 +634,25 @@ fn paint_snapping(p: &egui::Painter, c: egui::Pos2, color: egui::Color32) {
         [c + egui::vec2(0.0, -8.0), c + egui::vec2(0.0, 8.0)],
         egui::Stroke::new(1.2, color),
     );
+}
+
+/// A circular arrow.
+fn paint_loop(p: &egui::Painter, c: egui::Pos2, color: egui::Color32) {
+    let s = stroke(color);
+    let points: Vec<egui::Pos2> = (0..=20)
+        .map(|i| {
+            let a = 0.6 + i as f32 / 20.0 * 5.2;
+            c + egui::vec2(a.cos() * 7.0, a.sin() * 5.5)
+        })
+        .collect();
+    let tip = points[points.len() - 1];
+    p.add(egui::Shape::line(points, s));
+    p.add(arrow_head(
+        tip,
+        egui::vec2(0.6, 1.0).normalized(),
+        3.5,
+        color,
+    ));
 }
 
 /// Two chain links.

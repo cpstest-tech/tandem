@@ -170,6 +170,9 @@ impl VenturiApp {
             if pressed(Action::CloseGaps) {
                 self.close_all_gaps();
             }
+            if pressed(Action::ToggleLoop) {
+                self.timeline_state.loop_playback = !self.timeline_state.loop_playback;
+            }
             if pressed(Action::ToggleMagnet) {
                 self.timeline_state.magnet = !self.timeline_state.magnet;
             }

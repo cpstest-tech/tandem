@@ -508,6 +508,9 @@ action.switch_angle_8:
 action.switch_angle_9:
   en: "Switch to angle 9"
   it: "Passa all'angolazione 9"
+action.toggle_loop:
+  en: "Loop playback"
+  it: "Riproduzione in loop"
 action.ripple_tool:
   en: "Ripple trim tool"
   it: "Strumento ripple"

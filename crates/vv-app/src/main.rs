@@ -1366,7 +1366,14 @@ impl VenturiApp {
         }
         let timeline = &self.session.project.timelines[timeline_id];
         let (fps, end) = (timeline.fps.as_f64(), timeline.total_frames());
-        let playhead = self.timeline_state.playhead;
+        let mut playhead = self.timeline_state.playhead;
+        if self.timeline_state.loop_playback {
+            let (from, to) = self.timeline_state.export_marks.resolve(end);
+            if playhead < from || playhead >= to {
+                playhead = from;
+                self.timeline_state.playhead = from;
+            }
+        }
         if playhead >= end || !self.prepare_take() {
             return;
         }
@@ -1395,6 +1402,14 @@ impl VenturiApp {
         let timeline = &self.session.project.timelines[timeline_id];
         let (fps, end) = (timeline.fps.as_f64(), timeline.total_frames());
         let mut frame = self.timeline_audio().position_frame(fps);
+        if self.timeline_state.loop_playback {
+            let (from, to) = self.timeline_state.export_marks.resolve(end);
+            if to > from && frame >= to {
+                self.timeline_audio().seek_frame(from, fps);
+                self.last_synced_playhead = from;
+                frame = from;
+            }
+        }
         if frame >= end {
             frame = end;
             self.timeline_audio().pause();

@@ -404,6 +404,10 @@ timeline_bar.mode_slip:
   en: "Slip"
   it: "Slip"
 
+timeline_bar.loop_hint:
+  en: "Loop between the In and Out marks"
+  it: "Ripeti tra le marche In e Out"
+
 timeline_bar.mode_range:
   en: "Range"
   it: "Intervallo"

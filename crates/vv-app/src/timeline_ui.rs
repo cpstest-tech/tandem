@@ -196,6 +196,8 @@ pub struct TimelineState {
     pub export_marks: crate::transport::MarkRange,
     /// Where the Range tool's drag began.
     range_anchor: Option<FrameIdx>,
+    /// Playback wraps from the Out mark (or the end) back to the In mark.
+    pub loop_playback: bool,
     /// "Paste attributes" asked from the context menu: the dialog lives in
     /// the app, which opens it and clears the flag.
     pub paste_attributes_requested: bool,
@@ -538,6 +540,7 @@ impl Default for TimelineState {
             audio_scroll_vel: 0.0,
             export_marks: crate::transport::MarkRange::default(),
             range_anchor: None,
+            loop_playback: false,
             paste_attributes_requested: false,
             save_preset_requested: None,
             preset_drop: None,
