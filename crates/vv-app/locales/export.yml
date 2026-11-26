@@ -435,3 +435,11 @@ export.blur_none:
 export.empty_material:
   en: "%{count} AI infographics still have empty spaces for your photos or videos: they will be exported empty."
   it: "%{count} infografiche AI hanno ancora spazi vuoti per le tue foto o i tuoi video: verranno esportati vuoti."
+
+export.queued:
+  en: "Export queued (%{count} waiting): it starts when the current one ends."
+  it: "Export in coda (%{count} in attesa): parte quando finisce quello in corso."
+
+export.in_queue:
+  en: "%{count} more in the queue"
+  it: "Altri %{count} in coda"

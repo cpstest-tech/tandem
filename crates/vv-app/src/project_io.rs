@@ -72,6 +72,12 @@ pub(crate) struct PendingDialog {
 
 /// The export window: open from the start of an export until closed, so the
 /// outcome stays readable after the job is over.
+pub(crate) struct QueuedExport {
+    pub(crate) timeline: TimelineId,
+    pub(crate) settings: export::ExportSettings,
+    pub(crate) range: std::ops::Range<FrameIdx>,
+}
+
 pub(crate) struct ExportUiState {
     pub(crate) job: vv_session::JobId,
     pub(crate) progress: Arc<Mutex<export::ExportProgress>>,
@@ -1045,6 +1051,18 @@ impl VenturiApp {
             self.project_error = Some(t!("export.cutout_not_ready").into_owned());
             return;
         }
+        if self.export_running() {
+            self.export_queue.push_back(QueuedExport {
+                timeline: timeline_id,
+                settings,
+                range,
+            });
+            self.toast = Some((
+                t!("export.queued", count = self.export_queue.len()).into_owned(),
+                std::time::Instant::now(),
+            ));
+            return;
+        }
         self.pause_proxies_for_export();
         match self.session.export(timeline_id, settings, range) {
             Some((job, progress)) => self.export = Some(ExportUiState { job, progress }),
@@ -1053,6 +1071,28 @@ impl VenturiApp {
                 self.project_error = Some(t!("export.already_running").into_owned());
             }
         }
+    }
+
+    fn export_running(&self) -> bool {
+        self.export
+            .as_ref()
+            .is_some_and(|s| !s.progress.lock().unwrap().done)
+    }
+
+    /// Starts the next queued export once the current one is over. A queued
+    /// export takes the project as it is when it starts.
+    pub(crate) fn pump_export_queue(&mut self) {
+        if self.export_running() {
+            return;
+        }
+        let Some(next) = self.export_queue.pop_front() else {
+            return;
+        };
+        if !self.session.project.timelines.contains_key(next.timeline) {
+            return;
+        }
+        self.export = None;
+        self.run_export(next.timeline, next.settings, next.range);
     }
 
     pub(crate) fn show_import_warnings(&mut self, ui: &mut egui::Ui) {
@@ -1185,6 +1225,9 @@ impl VenturiApp {
                 if let Some(name) = &file_name {
                     ui.label(egui::RichText::new(name).strong());
                     ui.add_space(4.0);
+                }
+                if !self.export_queue.is_empty() {
+                    ui.weak(t!("export.in_queue", count = self.export_queue.len()));
                 }
 
                 let fraction = if total > 0 {

@@ -531,6 +531,8 @@ struct VenturiApp {
     fonts: FontCatalog,
 
     export: Option<ExportUiState>,
+    /// Exports asked while another runs: started one after the other.
+    export_queue: std::collections::VecDeque<project_io::QueuedExport>,
     export_dialog: Option<export_dialog::ExportDialog>,
     new_timeline_dialog: Option<NewTimelineDialog>,
     paste_attributes: Option<PasteAttributesDialog>,
@@ -735,6 +737,7 @@ impl Default for VenturiApp {
             clip_tab: properties_tabs::ClipTab::default(),
             fonts: FontCatalog::default(),
             export: None,
+            export_queue: Default::default(),
             export_dialog: None,
             new_timeline_dialog: None,
             paste_attributes: None,
@@ -4469,6 +4472,7 @@ impl VenturiApp {
             self.poll_stabilize_job(&ui.ctx().clone());
             self.poll_audio_sync(&ui.ctx().clone());
             self.poll_tracking(&ui.ctx().clone());
+            self.pump_export_queue();
         }
         let screenshots: Vec<std::sync::Arc<egui::ColorImage>> = ui.ctx().input(|i| {
             i.raw
