@@ -293,6 +293,7 @@ enum ProjectAction {
     RelinkFolder(FolderId),
     ImportOtio,
     NewTimeline,
+    SetTags(MediaId, Vec<String>),
 }
 
 impl PoolMenus<MediaId, FolderId> for ProjectMenus {
@@ -321,6 +322,30 @@ impl PoolMenus<MediaId, FolderId> for ProjectMenus {
             pool_view::rename_button(ui, entry, out);
             ui.separator();
         }
+        let key = egui::Id::new(("pool_tags_edit", entry.id));
+        let mut text: String = ui
+            .data(|d| d.get_temp(key))
+            .unwrap_or_else(|| entry.tags.join(", "));
+        ui.horizontal(|ui| {
+            ui.label(t!("pool.tags"));
+            let field = ui.add(
+                egui::TextEdit::singleline(&mut text)
+                    .hint_text(t!("pool.tags_hint"))
+                    .desired_width(160.0),
+            );
+            ui.data_mut(|d| d.insert_temp(key, text.clone()));
+            if field.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter)) {
+                let tags = text
+                    .split(',')
+                    .map(|t| t.trim().trim_start_matches('#').to_string())
+                    .filter(|t| !t.is_empty())
+                    .collect();
+                ui.data_mut(|d| d.remove::<String>(key));
+                out.push(MenuChoice::Action(ProjectAction::SetTags(entry.id, tags)));
+                ui.close();
+            }
+        });
+        ui.separator();
         let relink = if selected > 1 {
             t!("pool.relink_many", count = selected)
         } else {
@@ -607,6 +632,13 @@ impl VenturiApp {
                         .and_then(|w| w.state(item.content_hash)),
                     renamable: item.compound.is_some(),
                     added: used.contains(&id),
+                    tags: self
+                        .session
+                        .project
+                        .media_tags
+                        .get(&id)
+                        .cloned()
+                        .unwrap_or_default(),
                     hover: item.compound.is_none().then(|| pool_view::HoverActions {
                         favorite: library_ribbon::is_favorite(
                             &self.settings.favorites,
@@ -704,6 +736,15 @@ impl VenturiApp {
                     self.duplicate_timeline(id)
                 }
                 PoolEvent::Action(ProjectAction::Relink) => self.relink_media_dialog(),
+                PoolEvent::Action(ProjectAction::SetTags(id, tags)) => {
+                    let media: Vec<MediaId> = if self.media_pool_state.selected.contains(&id) {
+                        self.media_pool_state.selected.iter().copied().collect()
+                    } else {
+                        vec![id]
+                    };
+                    self.session
+                        .apply(Box::new(vv_core::SetMediaTags::new(media, tags)));
+                }
                 PoolEvent::Action(ProjectAction::AddToLibrary) => {
                     self.add_selected_media_to_library()
                 }

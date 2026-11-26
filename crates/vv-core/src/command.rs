@@ -91,6 +91,7 @@ pub enum CommandLabel {
     ReplaceClip,
     SwitchAngle,
     TrackMotion,
+    MediaTags,
     RemoveSilences,
     AutoCut,
     TextCut,
@@ -822,6 +823,54 @@ impl Command for ReplaceClip {
 
     fn undo(&self, project: &mut Project) {
         Self::put(project, self.timeline, self.track_index, &self.old);
+    }
+}
+
+/// Replaces the tags of some media of the pool.
+#[derive(Debug)]
+pub struct SetMediaTags {
+    pub media: Vec<MediaId>,
+    pub tags: Vec<String>,
+    old: Vec<(MediaId, Option<Vec<String>>)>,
+}
+
+impl SetMediaTags {
+    pub fn new(media: Vec<MediaId>, tags: Vec<String>) -> Self {
+        Self {
+            media,
+            tags,
+            old: Vec::new(),
+        }
+    }
+}
+
+impl Command for SetMediaTags {
+    fn label(&self) -> CommandLabel {
+        CommandLabel::MediaTags
+    }
+
+    fn apply(&mut self, project: &mut Project) {
+        self.old = self
+            .media
+            .iter()
+            .map(|id| {
+                let old = if self.tags.is_empty() {
+                    project.media_tags.remove(id)
+                } else {
+                    project.media_tags.insert(*id, self.tags.clone())
+                };
+                (*id, old)
+            })
+            .collect();
+    }
+
+    fn undo(&self, project: &mut Project) {
+        for (id, old) in &self.old {
+            match old {
+                Some(tags) => project.media_tags.insert(*id, tags.clone()),
+                None => project.media_tags.remove(id),
+            };
+        }
     }
 }
 

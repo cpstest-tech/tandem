@@ -54,6 +54,8 @@ pub(crate) struct PoolEntry<I, F> {
     pub hover: Option<HoverActions>,
     /// Already used in the timeline: shows the "Added" tag on grid tiles.
     pub added: bool,
+    /// The user's tags, matched by the search.
+    pub tags: Vec<String>,
 }
 
 pub(crate) struct PoolFolder<F> {
@@ -161,11 +163,12 @@ pub(crate) fn show_pool<I: PoolId, F: PoolId, M: PoolMenus<I, F>>(
         )
         .inner;
     let layout = *layout;
+    smart_bins(ui, &mut state.search);
     pool_header(ui, state);
     kinetic_pool_scroll(ui.ctx(), state, kinetic_scroll);
     let query = state.search.trim().to_string();
     if !query.is_empty() {
-        entries.retain(|e| media_pool::matches_search(&e.name, &query));
+        entries.retain(|e| entry_matches(e, &query));
     }
     // Hidden items must not stay selected: Del would delete them.
     if search_changed {
@@ -1491,6 +1494,53 @@ pub(crate) fn beside_tabs<R>(
 
 /// Returns whether the query changed.
 /// `salt` tells apart the search fields sharing a parent.
+/// Whether `entry` passes every word of `query`: `#tag`, `type:video`,
+/// `type:audio`, `type:image`, `is:used`, `is:unused`, `is:fav`, or text
+/// found in the name or a tag.
+pub(crate) fn entry_matches<I, F>(entry: &PoolEntry<I, F>, query: &str) -> bool {
+    let has_tag = |t: &str| entry.tags.iter().any(|tag| tag.to_lowercase().contains(t));
+    query.split_whitespace().all(|word| {
+        let word = word.to_lowercase();
+        if let Some(tag) = word.strip_prefix('#') {
+            return has_tag(tag);
+        }
+        match word.as_str() {
+            "type:video" => entry.meta.has_video && !entry.meta.is_image(),
+            "type:audio" => !entry.meta.has_video && entry.meta.has_audio,
+            "type:image" => entry.meta.is_image(),
+            "is:used" => entry.added,
+            "is:unused" => !entry.added,
+            "is:fav" => entry.hover.as_ref().is_some_and(|h| h.favorite),
+            _ => media_pool::matches_search(&entry.name, &word) || has_tag(&word),
+        }
+    })
+}
+
+/// Ready-made searches: one click shows only that kind of media.
+fn smart_bins(ui: &mut egui::Ui, search: &mut String) {
+    ui.horizontal_wrapped(|ui| {
+        ui.spacing_mut().item_spacing.x = 4.0;
+        let bins = [
+            ("", t!("pool.bin_all")),
+            ("type:video", t!("pool.bin_video")),
+            ("type:audio", t!("pool.bin_audio")),
+            ("type:image", t!("pool.bin_images")),
+            ("is:unused", t!("pool.bin_unused")),
+            ("is:fav", t!("pool.bin_favorites")),
+        ];
+        for (query, label) in bins {
+            let on = search.trim() == query;
+            if ui
+                .selectable_label(on, egui::RichText::new(label).small())
+                .on_hover_text(t!("pool.bin_hint"))
+                .clicked()
+            {
+                *search = query.to_string();
+            }
+        }
+    });
+}
+
 pub(crate) fn search_field(ui: &mut egui::Ui, search: &mut String, salt: &str) -> bool {
     let before = search.clone();
     // Right to left: the text field takes what the button leaves, margins

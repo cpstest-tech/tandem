@@ -265,3 +265,39 @@ pool.grid_root:
 pool.folder_open_hint:
   en: "Double click a folder to open it"
   it: "Doppio click su una cartella per aprirla"
+
+pool.tags:
+  en: "Tags"
+  it: "Tag"
+
+pool.tags_hint:
+  en: "beach, drone… (Enter)"
+  it: "spiaggia, drone… (Invio)"
+
+pool.bin_all:
+  en: "All"
+  it: "Tutti"
+
+pool.bin_video:
+  en: "Video"
+  it: "Video"
+
+pool.bin_audio:
+  en: "Audio"
+  it: "Audio"
+
+pool.bin_images:
+  en: "Images"
+  it: "Immagini"
+
+pool.bin_unused:
+  en: "Unused"
+  it: "Non usati"
+
+pool.bin_favorites:
+  en: "Favorites"
+  it: "Preferiti"
+
+pool.bin_hint:
+  en: "The search also takes #tag, type:video, type:audio, type:image, is:used, is:unused, is:fav"
+  it: "La ricerca accetta anche #tag, type:video, type:audio, type:image, is:used, is:unused, is:fav"

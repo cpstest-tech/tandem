@@ -40,7 +40,7 @@ pub use command::{
     RippleDeleteGap, SetAiSequence, SetAudioEffect, SetClipAttributes, SetClipColor, SetClipFade,
     SetClipFreeze, SetClipSpeed, SetClipValue, SetClipsDisabled, SetClipsDisplayColor,
     SetClipsReversed, SetClipsVoice, SetCover, SetCrossTransition, SetKeyframeInterpolation,
-    SetMarker, SetMediaPath, SetMixerParam, SetProcessingPrecision, SetTimelineFps,
+    SetMarker, SetMediaPath, SetMediaTags, SetMixerParam, SetProcessingPrecision, SetTimelineFps,
     SetTimelineResolution, SetTrackFlag, SlipClip, SpeedFit, SplitClip, TrackFlag, TrimClip,
     TrimEdge, UnlinkClip, UpsertKeyframe, compound_clip_commands, cut_overlaps, insert_overwriting,
     make_room_for_ranges, plan_compound_clip, reset_clip_gain, set_clip_assets,

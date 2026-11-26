@@ -416,6 +416,7 @@ impl VenturiApp {
                 renamable: true,
                 hover: None,
                 added: false,
+                tags: Vec::new(),
             });
         }
         let folders = self

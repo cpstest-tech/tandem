@@ -74,6 +74,7 @@ impl Pool {
                 .iter()
                 .map(|(id, folder)| PoolEntry {
                     added: false,
+                    tags: Vec::new(),
                     id: id.clone(),
                     name: id.clone(),
                     folder: folder.clone(),
@@ -342,4 +343,43 @@ fn grid_folders_are_tiles_opened_by_a_double_click() {
         pool.hover_files(egui::pos2(150.0, 500.0)).as_deref(),
         Some("f")
     );
+}
+
+#[test]
+fn the_pool_search_understands_tags_kinds_and_use() {
+    let entry = |name: &str, video: bool, image: bool, added: bool, tags: &[&str]| PoolEntry {
+        added,
+        tags: tags.iter().map(|t| t.to_string()).collect(),
+        id: name.to_string(),
+        name: name.to_string(),
+        folder: None::<String>,
+        meta: vv_core::MediaMeta {
+            duration_frames: if image {
+                vv_core::IMAGE_DURATION_FRAMES
+            } else {
+                25
+            },
+            fps: vv_core::Rational::new(25, 1),
+            width: 10,
+            height: 10,
+            has_video: video,
+            has_audio: !video,
+            sample_rate: 0,
+            channels: 0,
+            audio_streams: 0,
+            file: Default::default(),
+        },
+        thumb: Thumb::None,
+        proxy: None,
+        renamable: false,
+        hover: None,
+    };
+    let clip = entry("drone_01.mp4", true, false, true, &["Beach", "sunset"]);
+    let song = entry("song.mp3", false, false, false, &[]);
+    assert!(entry_matches(&clip, "#beach"));
+    assert!(entry_matches(&clip, "sunset drone"));
+    assert!(entry_matches(&clip, "type:video is:used"));
+    assert!(!entry_matches(&clip, "is:unused"));
+    assert!(entry_matches(&song, "type:audio is:unused"));
+    assert!(!entry_matches(&song, "#beach"));
 }

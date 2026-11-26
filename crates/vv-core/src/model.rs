@@ -3644,6 +3644,9 @@ pub struct Project {
     /// Words of the transcripts corrected by hand, per source.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub transcript_edits: Vec<crate::transcript_edit::TranscriptEdit>,
+    /// The user's tags of the pool's media, for the pool search.
+    #[serde(default, skip_serializing_if = "std::collections::BTreeMap::is_empty")]
+    pub media_tags: std::collections::BTreeMap<MediaId, Vec<String>>,
 }
 
 /// Where the user left the project, to resume from there when it is reopened.

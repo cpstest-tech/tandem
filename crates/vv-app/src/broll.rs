@@ -104,11 +104,15 @@ impl VenturiApp {
                 item.meta.has_video && item.compound.is_none() && !on_timeline.contains(id)
             })
             .map(|(id, item)| {
-                let name = item
+                // The tags count as words of the name.
+                let mut name = item
                     .path
-                    .file_name()
+                    .file_stem()
                     .map(|n| n.to_string_lossy().into_owned())
                     .unwrap_or_default();
+                if let Some(tags) = self.session.project.media_tags.get(&id) {
+                    name = format!("{name} {}", tags.join(" "));
+                }
                 let secs = if item.meta.is_image() {
                     SHOT_SECS
                 } else {

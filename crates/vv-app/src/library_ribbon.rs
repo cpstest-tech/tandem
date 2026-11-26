@@ -1642,6 +1642,7 @@ impl VenturiApp {
                 renamable: false,
                 hover: Some(HoverActions { favorite }),
                 added: false,
+                tags: Vec::new(),
             });
         }
         entries
@@ -1725,6 +1726,7 @@ impl VenturiApp {
                 renamable: false,
                 hover: Some(HoverActions { favorite: true }),
                 added: false,
+                tags: Vec::new(),
             });
         }
         let events = pool_view::show_pool(
