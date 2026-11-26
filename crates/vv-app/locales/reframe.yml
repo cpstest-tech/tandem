@@ -126,3 +126,15 @@ reframe.remove:
 reframe.remove_hint:
   en: "Removes the keyframes the reframe made and you did not change, in one step"
   it: "Rimuove in un passo i keyframe creati dal reframe che non hai modificato"
+
+reframe.blur_faces:
+  en: "Blur the faces"
+  it: "Sfoca i volti"
+
+reframe.blur_faces_hint:
+  en: "Adds a blurred copy above the clip, visible only over the faces and following them."
+  it: "Aggiunge sopra il clip una copia sfocata, visibile solo sui volti e che li segue."
+
+reframe.blur_no_faces:
+  en: "No faces were found in the clip."
+  it: "Nessun volto trovato nel clip."

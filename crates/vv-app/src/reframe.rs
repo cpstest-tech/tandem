@@ -213,6 +213,13 @@ impl VenturiApp {
             samples = analysis.samples.len()
         ));
         self.show_face_choice(ui, &subject, &analysis, clip_key);
+        if ui
+            .button(t!("reframe.blur_faces"))
+            .on_hover_text(t!("reframe.blur_faces_hint"))
+            .clicked()
+        {
+            self.blur_faces(target, &subject, &analysis);
+        }
 
         let previewing = self
             .reframe
@@ -300,6 +307,46 @@ impl VenturiApp {
                 }
             }
         }
+    }
+
+    /// A blurred copy of the clip on a new track above, shown only through
+    /// masks that follow the faces.
+    fn blur_faces(&mut self, target: &PanelTarget, subject: &Subject, analysis: &Analysis) {
+        let resolution = self.session.project.timelines[target.timeline].resolution;
+        let layer = crate::mask_panel::layer_size(subject.media_size, resolution);
+        let masks = reframe::face_blur_masks(analysis, layer);
+        if masks.is_empty() {
+            self.toast = Some((
+                t!("reframe.blur_no_faces").into_owned(),
+                std::time::Instant::now(),
+            ));
+            return;
+        }
+        let project = &mut self.session.project;
+        let history = &mut self.session.history;
+        let group = history.begin_group();
+        let track = crate::timeline_ui::add_track(
+            project,
+            history,
+            target.timeline,
+            vv_core::TrackKind::Video,
+        );
+        let mut copy = subject.clip.clone();
+        copy.id = project.alloc_clip_id();
+        copy.linked_group = None;
+        copy.effects.masks = masks;
+        let mut blur = vv_core::ClipFilter::new(vv_core::FilterKind::GaussianBlur);
+        blur.radius = vv_core::Keyframed::constant(40.0);
+        copy.effects.filters.push(blur);
+        history.do_command(
+            project,
+            Box::new(vv_core::InsertClip {
+                timeline: target.timeline,
+                track_index: track,
+                clip: copy,
+            }),
+        );
+        history.end_group_as(group, CommandLabel::InsertClips);
     }
 
     fn show_reframe_settings(&mut self, ui: &mut egui::Ui) {

@@ -563,3 +563,80 @@ pub fn keyframes(clip: &Clip, plan: &Plan) -> (TransformTracks, Vec<AutoKeyframe
 #[cfg(test)]
 #[path = "tests/reframe.rs"]
 mod tests;
+
+/// Most faces a blur follows at once.
+pub const MAX_BLURRED_FACES: usize = 4;
+
+/// Ellipse masks following the faces of `analysis` on a layer of
+/// `layer_size` pixels, one per face track: hidden (opacity 0) where its
+/// face is not found. Keyframes are at the analysis' media frames.
+pub fn face_blur_masks(analysis: &Analysis, layer_size: (u32, u32)) -> Vec<crate::mask::ClipMask> {
+    use crate::mask::{ClipMask, MaskParam, MaskShape};
+    let (lw, lh) = (layer_size.0 as f32, layer_size.1 as f32);
+    // Each track: its last face and the samples it has.
+    let mut tracks: Vec<(Face, Vec<(FrameIdx, Face)>)> = Vec::new();
+    for sample in &analysis.samples {
+        let mut used = vec![false; tracks.len()];
+        let mut faces = sample.faces.clone();
+        faces.sort_by(|a, b| (b.size[0] * b.size[1]).total_cmp(&(a.size[0] * a.size[1])));
+        for face in faces {
+            let nearest = tracks
+                .iter()
+                .enumerate()
+                .filter(|(i, _)| !used[*i])
+                .map(|(i, (last, _))| {
+                    let d =
+                        (face.center[0] - last.center[0]).hypot(face.center[1] - last.center[1]);
+                    (i, d / last.size[0].max(last.size[1]).max(1e-3))
+                })
+                .filter(|(_, d)| *d < 1.5)
+                .min_by(|a, b| a.1.total_cmp(&b.1));
+            match nearest {
+                Some((i, _)) => {
+                    used[i] = true;
+                    tracks[i].0 = face;
+                    tracks[i].1.push((sample.frame, face));
+                }
+                None if tracks.len() < MAX_BLURRED_FACES => {
+                    tracks.push((face, vec![(sample.frame, face)]));
+                    used.push(true);
+                }
+                None => {}
+            }
+        }
+    }
+    let frames: Vec<FrameIdx> = analysis.samples.iter().map(|s| s.frame).collect();
+    tracks
+        .into_iter()
+        .map(|(_, seen)| {
+            let mut mask = ClipMask::new(MaskShape::Ellipse, layer_size);
+            *mask.track_mut(MaskParam::Feather) = Keyframed::constant(12.0);
+            for &frame in &frames {
+                let face = seen
+                    .iter()
+                    .find(|(f, _)| *f == frame)
+                    .map(|(_, face)| *face);
+                let at = |track: &mut Keyframed<f32>, v: f32| {
+                    track.upsert(frame, v, Interpolation::Linear)
+                };
+                match face {
+                    Some(face) => {
+                        at(
+                            mask.track_mut(MaskParam::CenterX),
+                            (face.center[0] - 0.5) * lw,
+                        );
+                        at(
+                            mask.track_mut(MaskParam::CenterY),
+                            (0.5 - face.center[1]) * lh,
+                        );
+                        at(mask.track_mut(MaskParam::Width), face.size[0] * lw * 1.3);
+                        at(mask.track_mut(MaskParam::Height), face.size[1] * lh * 1.5);
+                        at(mask.track_mut(MaskParam::Opacity), 100.0);
+                    }
+                    None => at(mask.track_mut(MaskParam::Opacity), 0.0),
+                }
+            }
+            mask
+        })
+        .collect()
+}

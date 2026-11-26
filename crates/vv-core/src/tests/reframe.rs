@@ -271,3 +271,51 @@ fn keyframe_tags_of_older_projects_read_as_auto_zoom() {
         "auto zoom tags are written as before: {json}"
     );
 }
+
+#[test]
+fn the_blur_masks_follow_each_face_and_hide_when_it_is_gone() {
+    use crate::mask::MaskParam;
+    let face = |x: f32| Face {
+        center: [x, 0.5],
+        size: [0.1, 0.2],
+        score: 0.9,
+        mouth: 0.0,
+    };
+    let analysis = Analysis {
+        size: (1920, 1080),
+        range: (0, 30),
+        step: 10,
+        samples: vec![
+            Sample {
+                frame: 0,
+                faces: vec![face(0.25), face(0.75)],
+            },
+            Sample {
+                frame: 10,
+                faces: vec![face(0.27), face(0.73)],
+            },
+            Sample {
+                frame: 20,
+                faces: vec![face(0.29)],
+            },
+        ],
+        cuts: Vec::new(),
+    };
+    let masks = face_blur_masks(&analysis, (1920, 1080));
+    assert_eq!(masks.len(), 2);
+    let left = masks
+        .iter()
+        .find(|m| m.track(MaskParam::CenterX).value_at(0) < 0.0)
+        .unwrap();
+    assert!((left.track(MaskParam::CenterX).value_at(20) - (0.29 - 0.5) * 1920.0).abs() < 1e-3);
+    let right = masks
+        .iter()
+        .find(|m| m.track(MaskParam::CenterX).value_at(0) > 0.0)
+        .unwrap();
+    assert_eq!(
+        right.track(MaskParam::Opacity).value_at(20),
+        0.0,
+        "gone at frame 20"
+    );
+    assert_eq!(right.track(MaskParam::Opacity).value_at(10), 100.0);
+}
