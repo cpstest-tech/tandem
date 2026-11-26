@@ -150,6 +150,9 @@ impl VenturiApp {
             if pressed(Action::MatchFrame) {
                 self.match_frame();
             }
+            if pressed(Action::ReplaceEdit) {
+                self.replace_selected_clips();
+            }
             if pressed(Action::CloseGaps) {
                 self.close_all_gaps();
             }
@@ -1170,6 +1173,7 @@ fn command_label(label: vv_core::CommandLabel) -> std::borrow::Cow<'static, str>
         L::FreezeFrame => t!("history.freeze_frame"),
         L::ReverseClips => t!("history.reverse_clips"),
         L::VoiceEffect => t!("props.voice_changer"),
+        L::ReplaceClip => t!("action.replace_edit"),
         L::RemoveSilences => t!("history.remove_silences"),
         L::AutoCut => t!("auto_cut.title"),
         L::TextCut => t!("transcript.history_cut"),

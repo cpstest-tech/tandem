@@ -992,3 +992,65 @@ pub fn close_all_gaps(
     history.end_group_as(mark, CommandLabel::RippleDelete);
     gaps.len()
 }
+
+/// Puts `media` from `source_in` in the place of `clip`: same position,
+/// length (shortened if the media ends first) and effects.
+pub fn replace_clip_media(
+    project: &mut Project,
+    history: &mut History,
+    timeline_id: TimelineId,
+    (track, clip_id): ClipRef,
+    media: MediaId,
+    source_in: FrameIdx,
+) -> bool {
+    let Some(meta) = project.media_pool.get(media).map(|i| i.meta.clone()) else {
+        return false;
+    };
+    let tl = &project.timelines[timeline_id];
+    let Some(old) = tl.clip(track, clip_id).cloned() else {
+        return false;
+    };
+    let wants_video = tl.tracks[track].kind == TrackKind::Video;
+    if (wants_video && !meta.has_video) || (!wants_video && !meta.has_audio) {
+        return false;
+    }
+    let rate = Rational::conform_rate(tl.fps, meta.fps);
+    let available = if meta.is_image() {
+        FrameIdx::MAX
+    } else {
+        meta.duration_frames - source_in
+    };
+    let source_len = rate
+        .unscale_round(old.timeline_len)
+        .max(1)
+        .min(available.max(1));
+    let mut clip = Clip::from_source_range(
+        old.id,
+        ClipSource::Media(media),
+        source_in,
+        source_in + source_len,
+        old.timeline_start,
+        rate,
+    );
+    clip.timeline_len = clip.timeline_len.min(old.timeline_len);
+    clip.effects = old.effects.clone();
+    clip.effects.stabilize = None;
+    clip.linked_group = old.linked_group;
+    clip.fade_in = old.fade_in.min(clip.timeline_len);
+    clip.fade_out = old.fade_out.min(clip.timeline_len);
+    clip.display_color = old.display_color;
+    clip.disabled = old.disabled;
+    clip.audio_stream_index = old
+        .audio_stream_index
+        .min((meta.audio_streams as usize).saturating_sub(1));
+    history.do_command(
+        project,
+        Box::new(crate::command::ReplaceClip::new(
+            timeline_id,
+            track,
+            old,
+            clip,
+        )),
+    );
+    true
+}

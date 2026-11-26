@@ -88,6 +88,7 @@ pub enum CommandLabel {
     FreezeFrame,
     ReverseClips,
     VoiceEffect,
+    ReplaceClip,
     RemoveSilences,
     AutoCut,
     TextCut,
@@ -779,6 +780,46 @@ impl Command for SetClipsDisabled {
                 clip.disabled = old;
             }
         }
+    }
+}
+
+/// Swaps a clip for another with the same id (a replace edit).
+#[derive(Debug)]
+pub struct ReplaceClip {
+    pub timeline: TimelineId,
+    pub track_index: usize,
+    old: Clip,
+    new: Clip,
+}
+
+impl ReplaceClip {
+    pub fn new(timeline: TimelineId, track_index: usize, old: Clip, new: Clip) -> Self {
+        Self {
+            timeline,
+            track_index,
+            old,
+            new,
+        }
+    }
+
+    fn put(project: &mut Project, timeline: TimelineId, track: usize, clip: &Clip) {
+        let track = &mut project.timelines[timeline].tracks[track];
+        track.clips.retain(|c| c.id != clip.id);
+        track.insert_sorted(clip.clone());
+    }
+}
+
+impl Command for ReplaceClip {
+    fn label(&self) -> CommandLabel {
+        CommandLabel::ReplaceClip
+    }
+
+    fn apply(&mut self, project: &mut Project) {
+        Self::put(project, self.timeline, self.track_index, &self.new);
+    }
+
+    fn undo(&self, project: &mut Project) {
+        Self::put(project, self.timeline, self.track_index, &self.old);
     }
 }
 

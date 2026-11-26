@@ -888,3 +888,42 @@ fn closing_all_gaps_only_removes_the_stretches_empty_on_every_track() {
         "one undo step"
     );
 }
+
+#[test]
+fn a_replace_edit_keeps_place_length_and_effects() {
+    let (mut project, tl) = project_with_tracks(&[TrackKind::Video]);
+    let mut history = History::default();
+    let old = put(&mut project, &mut history, tl, 0, 30, 40);
+    project.timelines[tl].tracks[0]
+        .clip_mut(old)
+        .unwrap()
+        .effects
+        .remove_background = true;
+    let media = media(&mut project, 0);
+    assert!(replace_clip_media(
+        &mut project,
+        &mut history,
+        tl,
+        (0, old),
+        media,
+        100
+    ));
+    let clip = project.timelines[tl].clip(0, old).unwrap();
+    assert_eq!((clip.timeline_start, clip.timeline_len), (30, 40));
+    assert_eq!(clip.source_in(), 100);
+    assert!(matches!(clip.source, ClipSource::Media(m) if m == media));
+    assert!(clip.effects.remove_background);
+    history.undo(&mut project);
+    let clip = project.timelines[tl].clip(0, old).unwrap();
+    assert!(matches!(clip.source, ClipSource::SolidColor));
+}
+
+#[test]
+fn a_replace_edit_shortens_to_what_the_media_has_left() {
+    let (mut project, tl) = project_with_tracks(&[TrackKind::Video]);
+    let mut history = History::default();
+    let old = put(&mut project, &mut history, tl, 0, 0, 100);
+    let media = media(&mut project, 0);
+    replace_clip_media(&mut project, &mut history, tl, (0, old), media, 950);
+    assert_eq!(project.timelines[tl].clip(0, old).unwrap().timeline_len, 50);
+}

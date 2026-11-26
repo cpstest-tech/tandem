@@ -88,10 +88,11 @@ pub enum Action {
     MatchFrame,
     CloseGaps,
     RippleTool,
+    ReplaceEdit,
 }
 
 impl Action {
-    pub const ALL: [Action; 74] = [
+    pub const ALL: [Action; 75] = [
         Action::TogglePlayback,
         Action::FastPlayback,
         Action::StepBackward,
@@ -166,6 +167,7 @@ impl Action {
         Action::MatchFrame,
         Action::CloseGaps,
         Action::RippleTool,
+        Action::ReplaceEdit,
     ];
 
     /// Key in the settings file: must never be changed.
@@ -245,6 +247,7 @@ impl Action {
             Action::MatchFrame => "match_frame",
             Action::CloseGaps => "close_gaps",
             Action::RippleTool => "ripple_tool",
+            Action::ReplaceEdit => "replace_edit",
         }
     }
 
@@ -292,6 +295,7 @@ impl Action {
             | Action::SelectAll
             | Action::SelectFromPlayhead
             | Action::Rename
+            | Action::ReplaceEdit
             | Action::DeleteLeft
             | Action::DeleteRight
             | Action::Duplicate
@@ -466,6 +470,10 @@ impl Action {
             Action::NudgeRight10 => vec![ctrl_shift(Key::ArrowRight)],
             Action::MatchFrame => vec![plain(Key::F)],
             Action::RippleTool => vec![plain(Key::R)],
+            Action::ReplaceEdit => vec![Shortcut {
+                shift: true,
+                ..plain(Key::R)
+            }],
             Action::CloseGaps => vec![Shortcut {
                 alt: true,
                 ..plain(Key::Backspace)

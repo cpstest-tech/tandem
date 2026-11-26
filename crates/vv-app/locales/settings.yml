@@ -469,6 +469,9 @@ action.match_frame:
 action.close_gaps:
   en: "Close all gaps"
   it: "Chiudi tutti i buchi"
+action.replace_edit:
+  en: "Replace the selected clip"
+  it: "Sostituisci il clip selezionato"
 action.ripple_tool:
   en: "Ripple trim tool"
   it: "Strumento ripple"

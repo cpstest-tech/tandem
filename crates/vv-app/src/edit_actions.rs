@@ -175,6 +175,48 @@ impl VenturiApp {
         self.seek_browse(frame);
     }
 
+    /// The selected clips take the edit source instead, keeping place,
+    /// length and effects.
+    pub(crate) fn replace_selected_clips(&mut self) {
+        let (Some(timeline_id), Some((media, source_in, _))) =
+            (self.timeline_id, self.edit_source())
+        else {
+            return;
+        };
+        if self
+            .session
+            .project
+            .would_create_a_cycle(media, timeline_id)
+        {
+            return;
+        }
+        let tl = &self.session.project.timelines[timeline_id];
+        let targets: Vec<(usize, ClipId)> = self
+            .timeline_state
+            .selected
+            .iter()
+            .copied()
+            .filter(|&(t, _)| !tl.is_locked(t))
+            .collect();
+        if targets.is_empty() {
+            return;
+        }
+        let group = self.session.history.begin_group();
+        for clip in targets {
+            vv_core::edit::replace_clip_media(
+                &mut self.session.project,
+                &mut self.session.history,
+                timeline_id,
+                clip,
+                media,
+                source_in,
+            );
+        }
+        self.session
+            .history
+            .end_group_as(group, vv_core::CommandLabel::ReplaceClip);
+    }
+
     pub(crate) fn close_all_gaps(&mut self) {
         if let Some(timeline_id) = self.timeline_id {
             vv_core::edit::close_all_gaps(
